@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proactive Realtime SLA Tracking</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📡</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="title-block">
+        <h1>Proactive Realtime SLA Tracking</h1>
+        <p class="subtitle">
+          Are we meeting, at risk of missing, or breaching each partner's SLA?
+        </p>
+      </div>
+      <div class="live-block">
+        <span id="live-dot" class="live-dot" aria-hidden="true"></span>
+        <span id="live-label" class="live-label">connecting…</span>
+      </div>
+    </header>
+
+    <section class="summary" id="summary" aria-label="SLA status summary">
+      <div class="chip chip--on_track">
+        <span class="chip-count" data-count="on_track">0</span>
+        <span class="chip-label">On track</span>
+      </div>
+      <div class="chip chip--at_risk">
+        <span class="chip-count" data-count="at_risk">0</span>
+        <span class="chip-label">At risk</span>
+      </div>
+      <div class="chip chip--breaching">
+        <span class="chip-count" data-count="breaching">0</span>
+        <span class="chip-label">Breaching</span>
+      </div>
+      <div class="chip chip--met">
+        <span class="chip-count" data-count="met">0</span>
+        <span class="chip-label">Met</span>
+      </div>
+      <div class="chip chip--breached">
+        <span class="chip-count" data-count="breached">0</span>
+        <span class="chip-label">Breached</span>
+      </div>
+    </section>
+
+    <main>
+      <div class="table-toolbar">
+        <h2>Commitments</h2>
+        <span class="updated" id="updated"></span>
+      </div>
+      <div class="cards" id="cards"></div>
+      <p class="empty" id="empty" hidden>No commitments to show.</p>
+    </main>
+
+    <footer class="app-footer">
+      Realtime SLA tracker · updates stream via Server-Sent Events
+    </footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
