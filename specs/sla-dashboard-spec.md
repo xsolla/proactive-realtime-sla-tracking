@@ -82,11 +82,13 @@ This is the single most load-bearing detail in the design. Without it, historica
 
 Payload shaping happens on the server in two serialisers, not by conditional rendering in the client. The business payload never contains ticket keys, so they cannot leak through a missed conditional.
 
-### AD-6 — All partners tracking-only; fixtures are dev-only
+### AD-6 — No provisional data reaches any screen; terms arrive by committed file
 
-No provisional or invented SLA target exists in the production path. `EmptyTermsProvider` returns no scopes for every partner.
+No invented or provisional SLA target exists anywhere in the running system. `EmptyTermsProvider` returns no scopes until real terms exist.
 
-`FixtureTermsProvider` reads a test file and throws on import when `NODE_ENV === 'production'`, so the scored path can be developed and reviewed without any possibility of a provisional figure reaching a live screen.
+Fixture terms exist for engine tests only. There is no development mode that renders a scored dashboard from fabricated numbers — the scored UI is built when the first real contract lands, against that contract.
+
+First real terms arrive as a hand-authored file committed to the repo and read by `StaticTermsProvider`. Human entry plus pull-request review satisfies the confirmation gate in §12.2 without a bespoke review UI. Contract upload and model extraction (slice two) become a convenience for onboarding at scale, not a prerequisite for scoring.
 
 ### AD-7 — Alerting fires on transition only; the app sends
 
@@ -226,9 +228,12 @@ Only `contract_bound` scopes are returned by `listScopes`.
 
 ### 6.5 Implementations
 
-- `EmptyTermsProvider` — returns `[]` unconditionally. Production, today.
-- `DbTermsProvider` — reads confirmed terms. Slice two.
-- `FixtureTermsProvider` — reads a test file; throws on import when `NODE_ENV === 'production'`. Development and tests only.
+- `EmptyTermsProvider` — returns `[]` unconditionally. Production, until the first contract is entered.
+- `StaticTermsProvider` — reads `src/terms/contracts/` , a directory of hand-authored, PR-reviewed term files. Production, from the first contract onward. Only files marked `contract_bound` are returned.
+- `FixtureTermsProvider` — reads from `tests/fixtures/`; throws on import when `NODE_ENV === 'production'`. Engine tests only. Never wired to a route or a page.
+- `DbTermsProvider` — reads confirmed terms written by the extraction flow. Slice two, optional.
+
+Swapping provider is one line of composition in `feed/`. Nothing else changes.
 
 ---
 
@@ -533,13 +538,16 @@ No UI snapshot tests.
 | --- | --- | --- |
 | 1 | App scaffold, `project.mdc`, `engine-purity.mdc`, ESLint purity zone, theme tokens | — |
 | 2 | Registry, data layer, health partitioning | 1 |
-| 3 | Terms provider, types, lifecycle, empty and fixture implementations | 1 |
+| 3 | Terms provider, types, lifecycle, empty / static / fixture implementations | 1 |
 | 4 | Engine: intervals, status, penalty, reason — with the golden tests | 3 |
 | 5 | Feed, serialisers, viewer, routes | 2, 4 |
-| 6 | Technical view UI | 5 |
+| 6 | Technical view — tracking-only rendering | 5 |
 | 7 | Alert state, transition detection, message builders, internal route | 5 |
 | 8 | Backtest script | 4 |
 | 9 | n8n scheduling workflow | 7 |
-| 10+ | Slice two: upload, extraction, review UI, business view | 6, 7 |
+| 10 | First contract entered as a term file, `StaticTermsProvider` switched on | 3 |
+| 11 | Scored UI: budget bars, status badges, penalty exposure | 6, 10 |
+| 12 | Calibrate engine constants against backtest output | 8, 10 |
+| 13+ | Slice two: upload, extraction, review UI, business view | 11 |
 
-Prompt 4 is the one to review most carefully — everything downstream inherits its correctness.
+Prompt 4 is the one to review most carefully — everything downstream inherits its correctness. Prompts 10 to 12 are gated on real contracts arriving, not on engineering time.
