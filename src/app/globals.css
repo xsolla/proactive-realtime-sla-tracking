@@ -1,0 +1,66 @@
+@import "tailwindcss" source(none);
+@source "..";
+@config "../../config/tailwind.config.ts";
+
+/*
+  Values below are the Xsolla Operations tokens in
+  .cursor/rules/xsolla-design-system.mdc.
+  --warning is not in that file. The SLA spec requires a warning colour for
+  at-risk status, in both themes, before any badge exists. --danger follows
+  the existing destructive colour.
+*/
+:root {
+  --font-sans: var(--font-dm-sans), Arial, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
+  --radius: 0.25rem;
+  --spacing-base: 0.25rem;
+
+  --background: #ffffff;
+  --foreground: #000000;
+  --border: #dddfd8;
+  --input: #dddfd8;
+  --card: #f5f6f4;
+  --sidebar: #f5f6f4;
+  --primary: #31cae8;
+  --primary-foreground: #000000;
+  --ring: #31cae8;
+  --secondary: #ecede9;
+  --muted: #f0f2ef;
+  --muted-foreground: #666b67;
+  --accent: #80eaff;
+  --destructive: #ff005b;
+  --danger: var(--destructive);
+  --warning: #8c5e00;
+
+  --chart-1: #31cae8;
+  --chart-2: #80eaff;
+  --chart-3: #45646a;
+  --chart-4: #b8e817;
+  --chart-5: #ff005b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #101617;
+    --foreground: #ffffff;
+    --border: #344448;
+    --input: #344448;
+    --card: #182123;
+    --sidebar: #131b1d;
+    --primary: #31cae8;
+    --primary-foreground: #071012;
+    --ring: #80eaff;
+    --secondary: #263437;
+    --muted: #223033;
+    --muted-foreground: #aab8ba;
+    --accent: #80eaff;
+    --destructive: #ff3977;
+    --warning: #e8b339;
+
+    --chart-1: #31cae8;
+    --chart-2: #80eaff;
+    --chart-3: #7fa4ab;
+    --chart-4: #c7f22a;
+    --chart-5: #ff3977;
+  }
+}
