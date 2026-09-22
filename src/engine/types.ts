@@ -1,0 +1,144 @@
+export type Money = {
+  /** Major units, as written. */
+  amount: number;
+  /** ISO 4217 code, as written. */
+  currency: string;
+};
+
+export type PenaltyTier = {
+  /** Tier applies when achieved availability is strictly below this fraction. */
+  belowAvailability: number;
+  /** Credit as a fraction of fees. 0.1 is a 10% credit. */
+  creditFraction: number;
+};
+
+/**
+ * Fields the engine reads. Exclusions and minimum duration are not timeline
+ * inputs: section 7.3 counts only incident start and outage minutes.
+ */
+export type EngineTerms = {
+  /** Uptime target as a fraction. 0.999 is 99.9%. */
+  target: number;
+  window: "calendar_month";
+  /** Must be WINDOW_TIMEZONE. The engine does not convert other zones. */
+  timezone: string;
+  effectiveFrom: Date;
+  /** Last instant these terms apply, inclusive. Null when the contract states no end. */
+  effectiveTo: Date | null;
+  penaltyTiers: readonly PenaltyTier[];
+  /** Maximum credit fraction for this scope. Null when the contract states no per-scope cap. */
+  perScopeCap: number | null;
+  /** Maximum credit fraction across scopes. Null when the contract states no aggregate cap. */
+  contractAggregateCap: number | null;
+  /** Null means percentage-only reporting. */
+  monthlyFee: Money | null;
+};
+
+export type SlaScope<S extends string = string> =
+  | {
+      kind: "service";
+      scopeId: string;
+      service: S;
+      terms: EngineTerms;
+    }
+  | {
+      kind: "catch_all";
+      scopeId: string;
+      includesScopedServices: boolean;
+      terms: EngineTerms;
+    };
+
+export type PartnerScopes<P extends string = string, S extends string = string> = {
+  partner: P;
+  scopes: readonly SlaScope<S>[];
+};
+
+/** Subset of a usable outage. Callers may pass rows that carry extra fields. */
+export type UsableOutage<P extends string = string, S extends string = string> = {
+  pirKey: string;
+  partnerId: P;
+  serviceId: S;
+  incidentStarted: Date;
+  /** Wall-clock minutes. Always greater than zero on a real outage. */
+  outageMinutes: number;
+};
+
+/** Inclusive start, exclusive end. Instants are UTC. */
+export type Window = {
+  start: Date;
+  end: Date;
+};
+
+export type OutageRef<S extends string = string> = {
+  pirKey: string;
+  service: S;
+  incidentStarted: Date;
+  /** Minutes of this outage inside the result, before overlap merging. */
+  minutes: number;
+};
+
+export type BaselineComparison = {
+  currentMinutes: number;
+  /** Median used minutes of the six preceding UTC calendar months. Empty months count as zero. */
+  medianMinutes: number;
+  months: 6;
+  versusMedian: "above" | "equal" | "below";
+};
+
+export type StatusRule = "breaching" | "trend" | "level" | "meeting";
+
+/**
+ * Which rule determined status, plus the inputs that produced it.
+ * `fired` lists every at-risk clause that matched. It is empty for breaching
+ * and meeting. When trend and level both match, both are listed and `rule`
+ * is `trend` (the clause written first in section 7.4).
+ */
+export type StatusReason = {
+  rule: StatusRule;
+  fired: readonly ("trend" | "level")[];
+  elapsedFraction: number;
+  /** Null when allowance is zero and the ratio is undefined. */
+  consumedFraction: number | null;
+  projectedMinutes: number;
+  usedMinutes: number;
+  allowedMinutes: number;
+  /**
+   * consumedFraction / elapsedFraction.
+   * 1 means the current pace exhausts the allowance exactly at window close.
+   * 0 when elapsed time is zero or allowance is zero.
+   */
+  burnRate: number;
+};
+
+export type PenaltyFigure = {
+  /** Credit fraction after per-scope and contract-aggregate caps. */
+  creditFraction: number;
+  /** Null when the scope has no monthlyFee. */
+  amount: Money | null;
+};
+
+export type Evaluation<P extends string = string, S extends string = string> =
+  | {
+      kind: "tracking_only";
+      partner: P;
+      service: S;
+      usedMinutes: number;
+      incidentCount: number;
+      comparison: BaselineComparison;
+      outages: OutageRef<S>[];
+    }
+  | {
+      kind: "scored";
+      partner: P;
+      scopeId: string;
+      target: number;
+      allowedMinutes: number;
+      usedMinutes: number;
+      remainingMinutes: number;
+      burnRate: number;
+      status: "meeting" | "at_risk" | "breaching";
+      projectedExhaustion: Date | null;
+      penalty: { incurred: PenaltyFigure; projected: PenaltyFigure };
+      reason: StatusReason;
+      outages: OutageRef<S>[];
+    };
