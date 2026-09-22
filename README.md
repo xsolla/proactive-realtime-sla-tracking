@@ -12,7 +12,7 @@ contract and our Jira incidents — and warn us **before** a breach happens, not
 
 ## Architecture
 
-![Proactive Real-Time SLA Tracking — component view](docs/sla-architecture.png)
+![Proactive Real-Time SLA Tracking — component view](docs/sla-architecture-v2.svg)
 
 Data flows in one direction, from raw sources to a single evaluated record that every view and alert reads
 from — so the business and engineering pictures can never disagree.
@@ -130,33 +130,3 @@ repeats of "availability degraded."
 
 Scopely · Niantic · Kabam · Warner Brothers · Bandai Namco · Second Dinner · Roblox · Twitch · Mihoyo ·
 Nexters · Netmarble
-
-## Known unknowns
-
-- **Where we keep proof of planned-maintenance windows** — not decided yet. Check first whether Jira's
-  change-management fields already cover this before looking elsewhere.
-- **Which severity levels count as an SLA-affecting outage**, and whether a partial outage counts as half or
-  full — needs Legal + CSM agreement.
-- **How much older incident history has clean start/fix times and named partners** — still being measured.
-  This affects how far back we can trust the numbers, not whether the project works.
-- **Whether we ever show a dollar amount** instead of just the contract rate — deferred; easy to add later.
-
-## Roadmap
-
-Tracked under [GTOC-30](https://xsolla.atlassian.net/browse/GTOC-30). No dates — work moves in dependency
-order, so anything whose earlier step is done can start.
-
-| Step | Tasks |
-| --- | --- |
-| Agree the rules | [GTOC-31](https://xsolla.atlassian.net/browse/GTOC-31) |
-| Get the historic data ready | [GTOC-32](https://xsolla.atlassian.net/browse/GTOC-32) · [GTOC-33](https://xsolla.atlassian.net/browse/GTOC-33) · [GTOC-34](https://xsolla.atlassian.net/browse/GTOC-34) |
-| Set up each partner's contract terms | [GTOC-35](https://xsolla.atlassian.net/browse/GTOC-35) · [GTOC-36](https://xsolla.atlassian.net/browse/GTOC-36) · [GTOC-37](https://xsolla.atlassian.net/browse/GTOC-37) · [GTOC-38](https://xsolla.atlassian.net/browse/GTOC-38) |
-| Build the calculation engine | [GTOC-39](https://xsolla.atlassian.net/browse/GTOC-39) · [GTOC-40](https://xsolla.atlassian.net/browse/GTOC-40) · [GTOC-41](https://xsolla.atlassian.net/browse/GTOC-41) · [GTOC-42](https://xsolla.atlassian.net/browse/GTOC-42) |
-| Build the dashboards | [GTOC-43](https://xsolla.atlassian.net/browse/GTOC-43) · [GTOC-44](https://xsolla.atlassian.net/browse/GTOC-44) · [GTOC-45](https://xsolla.atlassian.net/browse/GTOC-45) |
-| Set up alerts | [GTOC-46](https://xsolla.atlassian.net/browse/GTOC-46) |
-| Go live + hand over | [GTOC-47](https://xsolla.atlassian.net/browse/GTOC-47) · [GTOC-48](https://xsolla.atlassian.net/browse/GTOC-48) |
-
-## References
-
-- Architecture: [Proactive Real-Time SLA Tracking Architecture](https://xsolla.atlassian.net/wiki/spaces/PS4/pages/25126438361/Proactive+Real-Time+SLA+Tracking+Architecture) (Confluence, space PS4)
-- Epic: [GTOC-30 — Proactive, Real-Time SLA Tracking](https://xsolla.atlassian.net/browse/GTOC-30)

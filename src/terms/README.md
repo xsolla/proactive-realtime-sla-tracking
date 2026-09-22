@@ -1,1 +1,1 @@
-Terms-provider interface plus the empty and fixture implementations. May import engine types; must not import data, registry, feed, alerts, ui, or app.
+Provider interface plus the empty, static, and fixture implementations. May import engine types, and PartnerId and ServiceId as types. Must not import data, feed, alerts, ui, or app, and must not call the registry resolver. FixtureTermsProvider is not exported from this barrel.
