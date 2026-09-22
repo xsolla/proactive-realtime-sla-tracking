@@ -13,7 +13,7 @@ export const SERVICES = [
   { id: "corp-site", displayName: "CorpSite", aliases: ["Corp Site"] },
   { id: "funding-club", displayName: "Funding Club", aliases: ["FundingClub"] },
   { id: "gamers-platform", displayName: "GamersPlatform", aliases: ["Gamers Platform"] },
-  { id: "igs-bb", displayName: "IGS-BB", aliases: ["IGS"] },
+  { id: "igs-bb", displayName: "IGS-BB", aliases: [] },
   { id: "infrastructure", displayName: "Infrastructure", aliases: [] },
   { id: "launcher", displayName: "Launcher", aliases: [] },
   { id: "lightstream", displayName: "Lightstream", aliases: [] },
