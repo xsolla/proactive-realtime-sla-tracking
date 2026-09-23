@@ -38,7 +38,7 @@ export function toBusinessView(
   });
 }
 
-export function renderStatusReason(reason: StatusReason): string {
+function renderStatusReason(reason: StatusReason): string {
   if (reason.rule === "breaching") {
     return "Downtime has used the full allowance for this window.";
   }

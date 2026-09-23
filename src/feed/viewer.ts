@@ -1,6 +1,4 @@
-const VIEWER_ROLES = ["business", "technical", "system"] as const;
-
-export type ViewerRole = (typeof VIEWER_ROLES)[number];
+export type ViewerRole = "business" | "technical" | "system";
 
 export type Viewer = {
   role: ViewerRole;

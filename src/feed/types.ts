@@ -13,13 +13,13 @@ export type FeedSources = {
   terms?: SlaTermsProvider;
 };
 
-/** Null until sla_outages gains a source column. Never invented. */
+/** Null until sla_outages gains a source column. */
 export type OutageProvenance = "backfill" | "pipeline";
 
 export type TechnicalOutage = {
   pirKey: string;
   pirUrl: string | null;
-  /** External merchant id (sla_outages.partner_id). Not the registry slug. */
+  /** External merchant id from sla_outages.partner_id. */
   partnerId: number | null;
   severity: SeverityId;
   decisionType: string | null;

@@ -43,5 +43,9 @@ describe("business feed payload", () => {
     expect(technical).toContain(PIR_KEY);
     expect(business).toContain('"kind":"scored"');
     expect(business).not.toContain(PIR_KEY);
+    expect(business).not.toContain("151639");
+    expect(business).not.toContain("ada");
+    expect(business).not.toContain("ai_approved");
+    expect(business).not.toContain("L1");
   });
 });

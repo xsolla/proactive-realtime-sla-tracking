@@ -39,6 +39,7 @@ export async function getSlaFeed(input: {
     };
   }
 
+  // The alert job uses the system role and reads this same engineer payload.
   return {
     asOf,
     health,

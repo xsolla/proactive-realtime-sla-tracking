@@ -1,4 +1,4 @@
-export { toBusinessView, renderStatusReason } from "./business";
+export { toBusinessView } from "./business";
 export { getSlaFeed } from "./get-sla-feed";
 export { getSlaHealth } from "./health";
 export { toTechnicalView } from "./technical";
