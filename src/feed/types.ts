@@ -24,10 +24,22 @@ export type TechnicalOutage = {
   severity: SeverityId;
   decisionType: string | null;
   reviewedBy: string | null;
+  /** ISO-8601. Null when the usable row has no reviewed_at. */
+  reviewedAt: string | null;
   source: OutageProvenance | null;
   service: string;
   incidentStarted: string;
-  minutes: number;
+  /** Minutes of this outage inside the window, before overlap merging. */
+  minutesInWindow: number;
+  /** Full outage_minutes from the usable row, including time outside the window. */
+  totalMinutes: number;
+  /** Shared by outages the engine merged into one interval. */
+  mergeGroup: string;
+  /**
+   * Minutes this outage adds after earlier members of its merge group.
+   * Summing this across the row equals usedMinutes.
+   */
+  countedMinutes: number;
 };
 
 export type TechnicalRow =

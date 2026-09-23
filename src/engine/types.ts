@@ -75,15 +75,41 @@ export type OutageRef<S extends string = string> = {
   incidentStarted: Date;
   /** Minutes of this outage inside the result, before overlap merging. */
   minutes: number;
+  /** Shared by outages whose in-window intervals were merged together. */
+  mergeGroup: string;
+  /**
+   * Minutes this outage adds to the scope total after earlier members of its
+   * merge group. The sum across a scope equals usedMinutes.
+   */
+  countedMinutes: number;
 };
 
-export type BaselineComparison = {
-  currentMinutes: number;
-  /** Median used minutes of the six preceding UTC calendar months. Empty months count as zero. */
-  medianMinutes: number;
-  months: 6;
-  versusMedian: "above" | "equal" | "below";
-};
+/**
+ * Comparison against the covered prior months only. A month that starts
+ * before data coverage is omitted, never counted as zero downtime.
+ */
+export type BaselineComparison =
+  | {
+      kind: "insufficient_history";
+      /** Prior months whose start falls on or after data coverage. */
+      coveredMonths: number;
+      /** Covered prior months with any recorded downtime. */
+      monthsWithDowntime: number;
+    }
+  | {
+      kind: "no_prior_downtime";
+      coveredMonths: number;
+      monthsWithDowntime: 0;
+    }
+  | {
+      kind: "compared";
+      coveredMonths: number;
+      monthsWithDowntime: number;
+      /** Median used minutes across covered prior months, including covered zeros. */
+      medianMinutes: number;
+      currentMinutes: number;
+      versusMedian: "above" | "equal" | "below";
+    };
 
 export type StatusRule = "breaching" | "trend" | "level" | "meeting";
 

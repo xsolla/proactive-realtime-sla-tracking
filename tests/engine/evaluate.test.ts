@@ -84,6 +84,16 @@ function partner(scopes: readonly SlaScope[], id = "scopely"): PartnerScopes {
   return { partner: id, scopes };
 }
 
+function expectTracking(
+  results: readonly Evaluation[],
+): Extract<Evaluation, { kind: "tracking_only" }> {
+  const row = results.find((result) => result.kind === "tracking_only");
+  if (row === undefined || row.kind !== "tracking_only") {
+    throw new Error("missing tracking row");
+  }
+  return row;
+}
+
 function expectScored(
   results: readonly Evaluation[],
   scopeId: string,
@@ -165,6 +175,11 @@ describe("evaluate", () => {
           outageMinutes: 100,
         }),
         outage({
+          pirKey: "PIR-LATER",
+          incidentStarted: new Date(Date.UTC(2026, 0, 12, 0, 0)),
+          outageMinutes: 15,
+        }),
+        outage({
           partnerId: "niantic",
           pirKey: "PIR-OTHER",
           incidentStarted: new Date(Date.UTC(2026, 0, 10, 0, 0)),
@@ -177,11 +192,21 @@ describe("evaluate", () => {
     });
 
     const row = expectScored(results, "payments");
-    expect(row.usedMinutes).toBe(140);
+    expect(row.usedMinutes).toBe(155);
     expect(row.outages.map((item) => item.minutes).reduce((sum, minutes) => sum + minutes, 0)).toBe(
-      200,
+      215,
     );
-    expect(row.outages.map((item) => item.pirKey).sort()).toEqual(["PIR-A", "PIR-B"]);
+    expect(row.outages.map((item) => item.pirKey).sort()).toEqual(["PIR-A", "PIR-B", "PIR-LATER"]);
+    const overlapping = row.outages.filter((item) => item.pirKey !== "PIR-LATER");
+    const later = row.outages.find((item) => item.pirKey === "PIR-LATER");
+    expect(overlapping.map((item) => item.mergeGroup)).toEqual([
+      overlapping[0]?.mergeGroup,
+      overlapping[0]?.mergeGroup,
+    ]);
+    expect(overlapping[0]?.mergeGroup).toEqual(expect.any(String));
+    expect(later?.mergeGroup).toEqual(expect.any(String));
+    expect(later?.mergeGroup).not.toBe(overlapping[0]?.mergeGroup);
+    expect(row.outages.reduce((sum, item) => sum + item.countedMinutes, 0)).toBe(row.usedMinutes);
   });
 
   it("burns both allowances when a Payments outage is included in the catch-all", () => {
@@ -846,41 +871,98 @@ describe("evaluate", () => {
     expect(expectScored(results, "login").penalty.incurred.creditFraction).toBeCloseTo(0.05, 8);
   });
 
-  it("compares tracking downtime with the median of the six preceding UTC months", () => {
-    const january = monthWindow(2026, 0);
-    const priorMinutes = [10, 20, 30, 40, 50, 60];
-    const outages = priorMinutes.map((minutes, index) =>
-      outage({
-        pirKey: `PIR-PRIOR-${index}`,
-        incidentStarted: new Date(Date.UTC(2025, 6 + index, 15, 0, 0)),
-        outageMinutes: minutes,
-      }),
-    );
-    outages.push(
-      outage({
-        pirKey: "PIR-CURRENT",
-        incidentStarted: new Date(Date.UTC(2026, 0, 15, 0, 0)),
-        outageMinutes: 50,
-      }),
-    );
-
+  it("reports no prior downtime when three covered months are clean", () => {
+    const april = monthWindow(2026, 3);
     const results = evaluate({
-      outages,
+      outages: [
+        outage({
+          pirKey: "PIR-APR",
+          incidentStarted: new Date(Date.UTC(2026, 3, 15, 0, 0)),
+          outageMinutes: 25,
+        }),
+      ],
       scopes: [partner([])],
-      window: january,
-      asOf: atEnd(january),
+      window: april,
+      asOf: atEnd(april),
     });
-    const row = results.find((result) => result.kind === "tracking_only");
-    if (row === undefined || row.kind !== "tracking_only") {
-      throw new Error("missing tracking row");
-    }
-
-    expect(row.comparison.months).toBe(6);
-    expect(row.comparison.currentMinutes).toBe(50);
-    expect(row.comparison.medianMinutes).toBe(35);
-    expect(row.comparison.versusMedian).toBe("above");
+    const row = expectTracking(results);
+    expect(row.comparison).toEqual({
+      kind: "no_prior_downtime",
+      coveredMonths: 3,
+      monthsWithDowntime: 0,
+    });
     expect(row.incidentCount).toBe(1);
     expect(Object.hasOwn(row, "status")).toBe(false);
+  });
+
+  it("does not compare when only one prior month is covered", () => {
+    const february = monthWindow(2026, 1);
+    const results = evaluate({
+      outages: [
+        outage({
+          pirKey: "PIR-JAN",
+          incidentStarted: new Date(Date.UTC(2026, 0, 15, 0, 0)),
+          outageMinutes: 40,
+        }),
+        outage({
+          pirKey: "PIR-FEB",
+          incidentStarted: new Date(Date.UTC(2026, 1, 15, 0, 0)),
+          outageMinutes: 10,
+        }),
+      ],
+      scopes: [partner([])],
+      window: february,
+      asOf: atEnd(february),
+    });
+    expect(expectTracking(results).comparison).toEqual({
+      kind: "insufficient_history",
+      coveredMonths: 1,
+      monthsWithDowntime: 1,
+    });
+  });
+
+  it("excludes months before coverage from the median", () => {
+    const april = monthWindow(2026, 3);
+    const results = evaluate({
+      outages: [
+        outage({
+          pirKey: "PIR-DEC",
+          incidentStarted: new Date(Date.UTC(2025, 11, 15, 0, 0)),
+          outageMinutes: 1000,
+        }),
+        outage({
+          pirKey: "PIR-JAN",
+          incidentStarted: new Date(Date.UTC(2026, 0, 15, 0, 0)),
+          outageMinutes: 10,
+        }),
+        outage({
+          pirKey: "PIR-FEB",
+          incidentStarted: new Date(Date.UTC(2026, 1, 15, 0, 0)),
+          outageMinutes: 30,
+        }),
+        outage({
+          pirKey: "PIR-MAR",
+          incidentStarted: new Date(Date.UTC(2026, 2, 15, 0, 0)),
+          outageMinutes: 50,
+        }),
+        outage({
+          pirKey: "PIR-APR",
+          incidentStarted: new Date(Date.UTC(2026, 3, 15, 0, 0)),
+          outageMinutes: 40,
+        }),
+      ],
+      scopes: [partner([])],
+      window: april,
+      asOf: atEnd(april),
+    });
+    expect(expectTracking(results).comparison).toEqual({
+      kind: "compared",
+      coveredMonths: 3,
+      monthsWithDowntime: 3,
+      medianMinutes: 30,
+      currentMinutes: 40,
+      versusMedian: "above",
+    });
   });
 
   it("rejects a scope that is not measured in UTC", () => {

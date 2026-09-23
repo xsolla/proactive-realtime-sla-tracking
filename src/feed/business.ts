@@ -1,4 +1,4 @@
-import type { Evaluation, PartnerScopes, StatusReason } from "@/engine";
+import type { BaselineComparison, Evaluation, PartnerScopes, StatusReason } from "@/engine";
 import { PARTNERS, SERVICES } from "@/registry";
 import type { BusinessRow } from "./types";
 
@@ -14,7 +14,7 @@ export function toBusinessView(
         service: serviceName(evaluation.service),
         usedMinutes: evaluation.usedMinutes,
         incidentCount: evaluation.incidentCount,
-        comparison: comparisonSentence(evaluation.comparison.versusMedian),
+        comparison: comparisonSentence(evaluation.comparison),
       };
     }
 
@@ -54,14 +54,21 @@ function renderStatusReason(reason: StatusReason): string {
   return "Downtime is within the allowance at this point in the window.";
 }
 
-function comparisonSentence(versus: "above" | "equal" | "below"): string {
-  if (versus === "above") {
-    return "Above this partner's six-month median.";
+function comparisonSentence(comparison: BaselineComparison): string {
+  if (comparison.kind === "insufficient_history") {
+    return "Not enough history to compare yet.";
   }
-  if (versus === "below") {
-    return "Below this partner's six-month median.";
+  if (comparison.kind === "no_prior_downtime") {
+    return `First recorded downtime in the last ${comparison.coveredMonths} covered months.`;
   }
-  return "Equal to this partner's six-month median.";
+  const span = comparison.coveredMonths === 6 ? "six-month" : `${comparison.coveredMonths}-month`;
+  if (comparison.versusMedian === "above") {
+    return `Above this partner's ${span} median.`;
+  }
+  if (comparison.versusMedian === "below") {
+    return `Below this partner's ${span} median.`;
+  }
+  return `Equal to this partner's ${span} median.`;
 }
 
 function percent(creditFraction: number): number {
