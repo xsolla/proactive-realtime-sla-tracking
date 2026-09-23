@@ -1,10 +1,14 @@
 import { integer, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 
-/** The only table this application owns. Used later for alert deduplication. */
+/**
+ * The only table this application owns. Used later for alert deduplication.
+ * partner_slug is the registry slug, for example "second-dinner".
+ * It is not sla_outages.partner_id, which is an external merchant id.
+ */
 export const slaAlertState = pgTable(
   "sla_alert_state",
   {
-    partnerId: text("partner_id").notNull(),
+    partnerSlug: text("partner_slug").notNull(),
     scopeId: text("scope_id").notNull(),
     period: text("period").notNull(),
     lastStatus: text("last_status").notNull(),
@@ -14,7 +18,7 @@ export const slaAlertState = pgTable(
   },
   (table) => [
     primaryKey({
-      columns: [table.partnerId, table.scopeId, table.period],
+      columns: [table.partnerSlug, table.scopeId, table.period],
     }),
   ],
 );

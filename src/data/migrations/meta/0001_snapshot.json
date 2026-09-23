@@ -1,0 +1,84 @@
+{
+  "id": "c4a1e8b2-6d47-4f1a-9c33-7b2e91a0d5f4",
+  "prevId": "0880fa07-987e-4035-910b-9722ac84f860",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.sla_alert_state": {
+      "name": "sla_alert_state",
+      "schema": "",
+      "columns": {
+        "partner_slug": {
+          "name": "partner_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope_id": {
+          "name": "scope_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period": {
+          "name": "period",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_status": {
+          "name": "last_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_alerted_at": {
+          "name": "last_alerted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alert_count": {
+          "name": "alert_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "sla_alert_state_partner_slug_scope_id_period_pk": {
+          "name": "sla_alert_state_partner_slug_scope_id_period_pk",
+          "columns": [
+            "partner_slug",
+            "scope_id",
+            "period"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

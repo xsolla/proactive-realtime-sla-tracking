@@ -1,30 +1,46 @@
-import { resolvePartner, resolveService, type PartnerId, type ServiceId } from "@/registry";
+import {
+  PARTNERS,
+  resolvePartner,
+  resolveService,
+  resolveSeverity,
+  type PartnerId,
+  type ServiceId,
+  type SeverityId,
+} from "@/registry";
 import type { Database } from "./db";
+import { parseMerchantId } from "./merchant-id";
 import { slaOutages } from "./schema/outages";
 
 export const UNUSABLE_REASONS = [
   "missing_outage_minutes",
   "invalid_outage_minutes",
   "missing_incident_started",
-  "missing_affected_service",
+  "invalid_partner_id",
   "unresolved_partner",
+  "missing_affected_service",
   "unresolved_service",
+  "missing_severity",
+  "unresolved_severity",
 ] as const;
 
 export type UnusableReason = (typeof UNUSABLE_REASONS)[number];
 
-/** A row as node-postgres / Drizzle returns it. outageMinutes is still a string. */
+/**
+ * A row as node-postgres / Drizzle returns it.
+ * outageMinutes and partnerId are still strings.
+ */
 export type OutageSourceRow = {
   id: number;
   pirKey: string;
   partner: string;
+  /** Raw sla_outages.partner_id. External merchant id text, not a foreign key. */
+  partnerId: string | null;
   incidentStarted: Date | null;
   affectedService: string | null;
   outageMinutes: string | null;
   severity: string | null;
   reviewedBy: string | null;
   decisionType: string | null;
-  reason: string | null;
   reviewedAt: Date | null;
   pirUrl: string | null;
 };
@@ -33,14 +49,16 @@ export type UsableOutage = {
   id: number;
   pirKey: string;
   pirUrl: string | null;
+  /** Registry slug. This is what evaluation groups on. */
   partnerId: PartnerId;
+  /** Parsed sla_outages.partner_id. Null when the row had no merchant id. */
+  merchantId: number | null;
   serviceId: ServiceId;
   incidentStarted: Date;
   outageMinutes: number;
-  severity: string | null;
+  severity: SeverityId;
   reviewedBy: string | null;
   decisionType: string | null;
-  reason: string | null;
   reviewedAt: Date | null;
 };
 
@@ -48,6 +66,9 @@ export type UnusableOutage = {
   id: number;
   pirKey: string;
   partner: string;
+  merchantId: number | null;
+  /** Set when the partner resolved but the row failed for another reason. */
+  resolvedPartnerId: PartnerId | null;
   affectedService: string | null;
   incidentStarted: Date | null;
   rawOutageMinutes: string | null;
@@ -65,6 +86,8 @@ export type OutageHealth = {
   countsByReason: Record<UnusableReason, number>;
   unresolvedPartnerNames: string[];
   unresolvedServiceNames: string[];
+  /** Registry slugs with no resolved row in this partition. Derived from rows, not from audit prose. */
+  partnersWithZeroAttributedRows: PartnerId[];
 };
 
 function parseOutageMinutes(
@@ -103,9 +126,23 @@ export function partitionOutages(rows: readonly OutageSourceRow[]): OutagePartit
       reasons.push("missing_incident_started");
     }
 
-    const partner = resolvePartner(row.partner);
-    if (partner.status === "unresolved") {
-      reasons.push("unresolved_partner");
+    const parsedMerchantId = parseMerchantId(row.partnerId);
+    let merchantId: number | null = null;
+    let partner: ReturnType<typeof resolvePartner>;
+    if (parsedMerchantId.status === "invalid") {
+      reasons.push("invalid_partner_id");
+      partner = { status: "unresolved", raw: parsedMerchantId.raw };
+    } else if (parsedMerchantId.status === "absent") {
+      partner = resolvePartner({ merchantId: null, name: row.partner });
+      if (partner.status === "unresolved") {
+        reasons.push("unresolved_partner");
+      }
+    } else {
+      merchantId = parsedMerchantId.merchantId;
+      partner = resolvePartner({ merchantId, name: row.partner });
+      if (partner.status === "unresolved") {
+        reasons.push("unresolved_partner");
+      }
     }
 
     const serviceName = row.affectedService?.trim() ?? "";
@@ -116,18 +153,30 @@ export function partitionOutages(rows: readonly OutageSourceRow[]): OutagePartit
       reasons.push("unresolved_service");
     }
 
+    const severityLabel = row.severity?.trim() ?? "";
+    const severity = severityLabel.length === 0 ? null : resolveSeverity(row.severity ?? "");
+    if (severity === null) {
+      reasons.push("missing_severity");
+    } else if (severity.status === "unresolved") {
+      reasons.push("unresolved_severity");
+    }
+
     if (
       reasons.length > 0 ||
       !minutes.ok ||
       incidentStarted === null ||
       service === null ||
       service.status !== "resolved" ||
-      partner.status !== "resolved"
+      partner.status !== "resolved" ||
+      severity === null ||
+      severity.status !== "resolved"
     ) {
       unusable.push({
         id: row.id,
         pirKey: row.pirKey,
         partner: row.partner,
+        merchantId,
+        resolvedPartnerId: partner.status === "resolved" ? partner.id : null,
         affectedService: row.affectedService,
         incidentStarted: row.incidentStarted,
         rawOutageMinutes: row.outageMinutes,
@@ -141,13 +190,13 @@ export function partitionOutages(rows: readonly OutageSourceRow[]): OutagePartit
       pirKey: row.pirKey,
       pirUrl: row.pirUrl,
       partnerId: partner.id,
+      merchantId,
       serviceId: service.id,
       incidentStarted,
       outageMinutes: minutes.minutes,
-      severity: row.severity,
+      severity: severity.id,
       reviewedBy: row.reviewedBy,
       decisionType: row.decisionType,
-      reason: row.reason,
       reviewedAt: row.reviewedAt,
     });
   }
@@ -162,10 +211,18 @@ export function summarizeOutageHealth(partition: OutagePartition): OutageHealth 
   >;
   const unresolvedPartnerNames = new Set<string>();
   const unresolvedServiceNames = new Set<string>();
+  const attributed = new Set<PartnerId>();
+
+  for (const row of partition.usable) {
+    attributed.add(row.partnerId);
+  }
 
   for (const row of partition.unusable) {
     for (const reason of row.reasons) {
       countsByReason[reason] += 1;
+    }
+    if (row.resolvedPartnerId !== null) {
+      attributed.add(row.resolvedPartnerId);
     }
     if (row.reasons.includes("unresolved_partner") && row.partner.trim() !== "") {
       unresolvedPartnerNames.add(row.partner.trim());
@@ -185,6 +242,7 @@ export function summarizeOutageHealth(partition: OutagePartition): OutageHealth 
     countsByReason,
     unresolvedPartnerNames: [...unresolvedPartnerNames].sort(),
     unresolvedServiceNames: [...unresolvedServiceNames].sort(),
+    partnersWithZeroAttributedRows: PARTNERS.map((partner) => partner.id).filter((id) => !attributed.has(id)),
   };
 }
 

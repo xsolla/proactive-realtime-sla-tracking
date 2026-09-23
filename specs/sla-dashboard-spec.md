@@ -131,6 +131,37 @@ Single Next.js application at repo root.
 
 ## 5. Data layer
 
+### 5.0 Actual `sla_outages` schema (observed 2026-09-22)
+
+Confirmed from live rows, not assumed. The dashboard mirrors this read-only.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | int | surrogate key |
+| `pir_key` | text | e.g. `GTO-543`; part of the pipeline's idempotency key |
+| `partner` | text | resolved partner display name, human-approved; a display convenience that can drift |
+| `partner_id` | **text** | **already present.** The external *merchant id* (e.g. `"506855"`), not a FK. Authoritative partner identity per the attribution step. String, so parse at the edge |
+| `incident_started` | timestamptz | UTC |
+| `affected_service` | text | free text, needs canonical resolution |
+| `outage_minutes` | numeric | **returns as a string** from node-postgres |
+| `severity` | text | free text, e.g. `L1 — Critical`; needs canonical resolution |
+| `reviewed_by` | text | reviewer identity — engineer/audit detail |
+| `decision_type` | text | e.g. `ai_approved` — human-review provenance |
+| `reason` | text | reviewer note; usually empty. **Not mapped** |
+| `reviewed_at` | timestamptz | |
+| `pir_url` | text | constructed Jira link |
+| `ai_reasoning` | text | batch-level attribution narrative across all partners, including which partners had **no** matches. **Not mapped** |
+
+**Two fields are deliberately not mapped.** `ai_reasoning` and `reason` are pipeline audit fields. `ai_reasoning` is a batch-level narrative describing an entire attribution run across all partners, not a per-row explanation, and carries merchant IDs and internal project names. Neither has per-row evaluation value. Both remain in the table as the contemporaneous attribution audit record — valuable in a future penalty dispute — but are read by nobody in this application. Stored, not wired.
+
+**Not to be confused with the engine's `StatusReason`.** That is computed by the engine, explains why a scope holds its status, and is unrelated to these ingestion fields. See §7.6.
+
+**Fields with no per-row confidence signal.** Attribution has already been resolved to a `partner` string upstream. There is no per-row match-method or confidence column, so the technical view shows no attribution-confidence indicator — there is no data behind it. `decision_type` (`ai_approved` vs. a human correction) is the available provenance signal and is shown instead.
+
+**Absent columns to note.** No `source` discriminator yet (see §5.2). No `incident_resolved` — duration is `outage_minutes` alone, as intended.
+
+**The partners-with-zero-rows health check is derived, not parsed.** `ai_reasoning` names the partners that had no matches in a run, but the health panel must compute "registry partners with zero attributed rows this period" structurally from the resolved rows, never by reading names out of the `ai_reasoning` prose. The prose format is model-controlled and may change; the health signal must not depend on it.
+
 ### 5.1 Ownership
 
 `sla_outages` is owned by the n8n pipeline. The dashboard declares a Drizzle table definition mirroring the existing schema for reading only, and generates no migrations against it.
@@ -141,18 +172,20 @@ The application should connect using a Postgres role with `SELECT` on `sla_outag
 
 ```sql
 sla_alert_state (
-  partner_id      text not null,
-  scope_id        text not null,
-  period          text not null,        -- e.g. '2026-09'
+  partner_slug    text not null,          -- registry slug, e.g. 'second-dinner'
+  scope_id        text not null,          -- NOT the sla_outages.partner_id (that's a merchant id)
+  period          text not null,          -- e.g. '2026-09'
   last_status     text not null,
   last_alerted_at timestamptz,
   alert_count     int not null default 0,
   updated_at      timestamptz not null,
-  primary key (partner_id, scope_id, period)
+  primary key (partner_slug, scope_id, period)
 )
 ```
 
-A `source` column on `sla_outages` (`backfill` | `pipeline`) is required. If the ingestion pipeline owns that migration, it is a prerequisite rather than dashboard work.
+One `sla_outages` column remains a pipeline-owned change the dashboard depends on: a `source` column (`backfill` | `pipeline`), required before backfill import so the two provenances are distinguishable.
+
+The authoritative merchant id is already written by the pipeline as `partner_id` (text). No addition needed — the dashboard reads it as the identity key. Its column name resembles a foreign key but it is an external merchant id; the mirror should comment this to prevent a later false join assumption.
 
 ### 5.3 Four traps that must be handled explicitly
 
@@ -162,7 +195,26 @@ A `source` column on `sla_outages` (`backfill` | `pipeline`) is required. If the
 
 **Window timezone is declared, not inherited.** UTC, held as a named constant in `engine/constants.ts`, per the measurement rules page. Never derived from host or viewer locale.
 
-**Free-text names require canonical resolution.** Partner and service names arrive human-typed from backfill and Jira-derived from the pipeline; they will not match. The registry holds each pilot partner and SLA-relevant service with known aliases. Unresolved names go to the health output and are excluded from evaluation — never silently dropped, never creating a phantom partner.
+**Free-text values require canonical resolution.** Partner names, service names and severity labels all arrive as free text and will not match across sources. The registry holds each pilot partner (with its `merchantIds` list and name aliases), each SLA-relevant service, and each severity level with its variants.
+
+Partner resolution is **`partner_id` first, name second.** `partner_id` holds the external merchant id (a string, e.g. `"506855"`) and is the authoritative match — the attribution step marks it authoritative. Parse it to an integer once at the data-layer edge and match against the registry's `merchantIds` list. The free-text `partner` name is the fallback only for rows without a `partner_id`, such as historical backfill. Where `partner` and `partner_id` disagree, `partner_id` wins. `merchantIds` is modelled as a list per partner, since a partner may span several merchant accounts.
+
+Unresolved values go to the health output and are excluded from evaluation — never silently dropped, never creating a phantom partner.
+
+### 5.4 Registry verification
+
+`scripts/verify-registry.ts` is a read-only script run against the live database, separate from the test suite (which stays hermetic). It reports where the data disagrees with the const registry:
+
+| Finding | Meaning |
+| --- | --- |
+| Unknown id | A `partner_id` present in data but in no registry entry. Rows the dashboard will refuse to evaluate |
+| Name disagreement | One `partner_id` under two partner names, or one name under two ids. The free-text name has drifted from the authoritative id |
+| Zero coverage | A registry partner with no rows. Expected for some partners today, but stated explicitly — "no rows" and "no outages" look identical and only one is good news |
+| Confirmed | Ids present in both, with row counts, so the healthy case is visible rather than inferred from silence |
+
+It exits non-zero on unknown ids or name disagreements, and **never mutates the registry**. An unrecognised id is a question for a person, not a row to auto-create — auto-adding would silently create the phantom partner the resolution rules exist to prevent.
+
+Canonical merchant ids: Scopely 151639, Niantic 221437, Kabam 237137, Warner Brothers 169548, Bandai Namco 503608, Second Dinner 506855, Nexters 60556, Roblox 38519, Twitch 13132, miHoYo 166973, Netmarble 207429.
 
 ---
 
@@ -350,9 +402,9 @@ Loads outages, resolves identities, fetches scopes, calls `evaluate()`, shapes b
 
 ### 8.2 Serialisers
 
-`toTechnicalView` — retains PIR keys, per-outage rows, attribution confidence, provenance, raw `reason`.
+`toTechnicalView` — retains PIR keys, per-outage rows, `partner_id` (merchant id), canonical severity, review provenance (`decision_type`, `reviewed_by`), `source` provenance once present, and the raw `StatusReason`. No attribution-confidence field: the data carries none.
 
-`toBusinessView` — status, consumed budget, projected exhaustion, credit percentage, plain-language sentence rendered from `reason`. Contains no ticket key of any kind.
+`toBusinessView` — status, consumed budget, projected exhaustion, credit percentage, plain-language sentence rendered from `StatusReason`. Contains no ticket key, no partner_id/merchant id, no reviewer identity, no internal severity label — nothing engineer- or audit-side.
 
 ### 8.3 Routes
 
@@ -390,7 +442,7 @@ This is the first place anyone can see partner-attributed downtime across all pi
 
 - **Header** — window selector, `asOf` timestamp, data-health chip
 - **Main** — table grouped by partner, one row per scope
-- **Expanded row** — contributing outages: PIR key linking to Jira, UTC start, minutes, service, attribution confidence, provenance (`backfill` | `pipeline`)
+- **Expanded row** — contributing outages: PIR key linking to Jira, UTC start, minutes, service, canonical severity, `decision_type` (e.g. ai_approved vs. human correction), reviewer, and `source` provenance (`backfill` | `pipeline`) once that column exists
 - **Backtest control** — per partner, runs historical replay once terms bind (see §11)
 
 When terms land, scored rows gain a budget bar and status badge in the same table. No second screen.
@@ -526,7 +578,7 @@ No UI snapshot tests.
 | 2 | Which Slack channels receive CSM, engineer and Legal alerts | Alerting | Partner Success |
 | 3 | Who confirms extracted terms — CSM, Legal, or both | Slice two | Partner Success / Legal |
 | 4 | Deployment target and how n8n reaches the internal endpoint | Alerting | Engineering |
-| 5 | Does the ingestion pipeline own the `source` column migration | Data layer | Engineering |
+| 5 | `source` discriminator column (blocks backfill import). `partner_id`/merchant id is already written by the pipeline | Data layer, backfill | Engineering / n8n owner |
 
 **Closed 2026-09-21.** `outage_minutes` is wall-clock elapsed time, always positive, and together with `incident_started` is the sole basis for the timeline. Interval merging is valid as specified.
 

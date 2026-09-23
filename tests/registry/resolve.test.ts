@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { PARTNERS, SERVICES, resolvePartner, resolveService } from "@/registry";
+import {
+  PARTNERS,
+  SEVERITIES,
+  SERVICES,
+  resolvePartner,
+  resolveService,
+  resolveSeverity,
+} from "@/registry";
+
+function byName(name: string) {
+  return resolvePartner({ merchantId: null, name });
+}
 
 describe("partner registry", () => {
   it("lists each pilot partner once, under a stable slug", () => {
@@ -43,14 +54,45 @@ describe("partner registry", () => {
     ];
 
     for (const [raw, id] of variants) {
-      expect(resolvePartner(raw), raw).toEqual({ status: "resolved", id });
+      expect(byName(raw), raw).toEqual({ status: "resolved", id });
     }
   });
 
   it("returns unresolved instead of guessing a nearby name", () => {
     for (const raw of ["Warner", "WB", "Namco", "Sco", "", "   ", "Not a partner"]) {
-      expect(resolvePartner(raw), raw).toEqual({ status: "unresolved", raw });
+      expect(byName(raw), raw).toEqual({ status: "unresolved", raw });
     }
+  });
+
+  it("stores each pilot merchant id on its partner", () => {
+    expect(PARTNERS.map((partner) => [partner.id, partner.merchantIds])).toEqual([
+      ["scopely", [151639]],
+      ["niantic", [221437]],
+      ["kabam", [237137]],
+      ["warner-brothers", [169548]],
+      ["bandai-namco", [503608]],
+      ["second-dinner", [506855]],
+      ["roblox", [38519]],
+      ["twitch", [13132]],
+      ["mihoyo", [166973]],
+      ["nexters", [60556]],
+      ["netmarble", [207429]],
+    ]);
+  });
+
+  it("resolves partner_id first and uses the name only when the id is absent", () => {
+    expect(resolvePartner({ merchantId: 506855, name: "Kabam" })).toEqual({
+      status: "resolved",
+      id: "second-dinner",
+    });
+    expect(resolvePartner({ merchantId: null, name: "Kabam" })).toEqual({
+      status: "resolved",
+      id: "kabam",
+    });
+    expect(resolvePartner({ merchantId: 191692, name: "Scopely" })).toEqual({
+      status: "unresolved",
+      raw: "191692",
+    });
   });
 });
 
@@ -117,6 +159,39 @@ describe("service registry", () => {
   it("returns unresolved instead of guessing a nearby service", () => {
     for (const raw of ["Pay", "Store", "IGS", "Shop", "Pay Station", "", "   !!! "]) {
       expect(resolveService(raw), raw).toEqual({ status: "unresolved", raw });
+    }
+  });
+});
+
+describe("severity registry", () => {
+  it("lists each severity once, under a stable slug", () => {
+    expect(SEVERITIES.map((severity) => [severity.id, severity.displayName])).toEqual([
+      ["l0", "L0 — Catastrophic"],
+      ["l1", "L1 — Critical"],
+      ["l2", "L2 — Major"],
+    ]);
+  });
+
+  it("resolves realistic severity labels to that slug", () => {
+    const variants: Array<[string, string]> = [
+      ["L0 — Catastrophic", "l0"],
+      ["L1 — Critical", "l1"],
+      ["L2 — Major", "l2"],
+      ["L1", "l1"],
+      ["  l1 - critical  ", "l1"],
+      ["1 Level", "l1"],
+      ["0 Level", "l0"],
+      ["2 Level", "l2"],
+    ];
+
+    for (const [raw, id] of variants) {
+      expect(resolveSeverity(raw), raw).toEqual({ status: "resolved", id });
+    }
+  });
+
+  it("returns unresolved instead of guessing a nearby severity", () => {
+    for (const raw of ["Critical", "L3", "L9 — Minor", "", "   "]) {
+      expect(resolveSeverity(raw), raw).toEqual({ status: "unresolved", raw });
     }
   });
 });
