@@ -13,6 +13,7 @@ function outage(overrides: Partial<OutageSourceRow> = {}): OutageSourceRow {
     id: 1,
     pirKey: "GTO-100",
     partner: "Scopely",
+    partnerId: null,
     incidentStarted: new Date("2026-04-16T12:00:00.000Z"),
     affectedService: "Payments",
     outageMinutes: "10",

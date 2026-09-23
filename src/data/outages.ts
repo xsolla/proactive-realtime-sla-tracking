@@ -13,11 +13,16 @@ export const UNUSABLE_REASONS = [
 
 export type UnusableReason = (typeof UNUSABLE_REASONS)[number];
 
-/** A row as node-postgres / Drizzle returns it. outageMinutes is still a string. */
+/**
+ * A row as node-postgres / Drizzle returns it.
+ * outageMinutes and partnerId are still strings.
+ */
 export type OutageSourceRow = {
   id: number;
   pirKey: string;
   partner: string;
+  /** Raw sla_outages.partner_id. External merchant id text, not a foreign key. */
+  partnerId: string | null;
   incidentStarted: Date | null;
   affectedService: string | null;
   outageMinutes: string | null;
@@ -33,7 +38,10 @@ export type UsableOutage = {
   id: number;
   pirKey: string;
   pirUrl: string | null;
+  /** Registry slug. Evaluation groups on this. */
   partnerId: PartnerId;
+  /** Parsed sla_outages.partner_id. Null when the row had no merchant id. */
+  merchantId: number | null;
   serviceId: ServiceId;
   incidentStarted: Date;
   outageMinutes: number;
@@ -66,6 +74,20 @@ export type OutageHealth = {
   unresolvedPartnerNames: string[];
   unresolvedServiceNames: string[];
 };
+
+function parseMerchantId(value: string | null): number | null {
+  if (value === null || value.trim() === "") {
+    return null;
+  }
+  if (!/^\d+$/.test(value.trim())) {
+    return null;
+  }
+  const merchantId = Number(value.trim());
+  if (!Number.isSafeInteger(merchantId)) {
+    return null;
+  }
+  return merchantId;
+}
 
 function parseOutageMinutes(
   value: string | null,
@@ -141,6 +163,7 @@ export function partitionOutages(rows: readonly OutageSourceRow[]): OutagePartit
       pirKey: row.pirKey,
       pirUrl: row.pirUrl,
       partnerId: partner.id,
+      merchantId: parseMerchantId(row.partnerId),
       serviceId: service.id,
       incidentStarted,
       outageMinutes: minutes.minutes,
