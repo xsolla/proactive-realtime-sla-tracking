@@ -64,3 +64,8 @@
     --chart-5: #ff3977;
   }
 }
+
+summary.menu-trigger::-webkit-details-marker,
+summary.disclosure::-webkit-details-marker {
+  display: none;
+}

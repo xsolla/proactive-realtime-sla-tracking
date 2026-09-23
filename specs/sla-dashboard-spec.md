@@ -13,7 +13,7 @@ Suggested location in repo: `specs/sla-dashboard-spec.md`
 
 Track, in real time, how production performance measures against SLAs contractually committed to partners — so that a partner heading for a breach is visible days before it happens rather than surfaced afterwards by the partner.
 
-This spec covers four subsystems:
+This spec covers six subsystems:
 
 | # | Subsystem | Slice |
 | --- | --- | --- |
@@ -21,10 +21,10 @@ This spec covers four subsystems:
 | 2 | Shared feed and role shaping | One |
 | 3 | Technical (engineer) view | One |
 | 4 | Alerting | One |
-| 5 | Contract upload and term extraction | Two |
-| 6 | Business (CSM) view | Two |
+| 5 | Business (CSM) view | One-and-a-half — gated on real terms only |
+| 6 | Contract upload and term extraction | Two — gated on OQ-1 |
 
-Slice one is independently useful and shippable. Slice two depends on it.
+Slice one is independently useful and shippable. The business view follows as soon as real contracts land; it is deliberately not bundled with upload and extraction, which carry an unresolved governance dependency.
 
 ---
 
@@ -436,13 +436,15 @@ Every partner is tracking-only, so there is no status, budget bar or penalty. Th
 
 A tracking-only row shows: minutes this window, incident count, affected service, and comparison against that partner's own recent months. The comparison is descriptive — *above this partner's six-month median* — never evaluative.
 
+**The baseline must know its own coverage.** A month before data coverage began (2026-01-01) is unknown, not clean, and must never count as a zero-downtime month. The comparison carries a kind: *insufficient history* when too few covered prior months exist; *no prior downtime* when all covered months are clean, rendered as "first recorded downtime in the last N covered months"; and *compared* otherwise. A comparison against a median of zero is never rendered — it is true of any outage and says nothing.
+
 This is the first place anyone can see partner-attributed downtime across all pilot partners in one view. It earns its keep before a single SLA term exists.
 
 ### 9.2 Structure
 
 - **Header** — window selector, `asOf` timestamp, data-health chip
 - **Main** — table grouped by partner, one row per scope
-- **Expanded row** — contributing outages: PIR key linking to Jira, UTC start, minutes, service, canonical severity, `decision_type` (e.g. ai_approved vs. human correction), reviewer, and `source` provenance (`backfill` | `pipeline`) once that column exists
+- **Expanded row** — one line per contributing outage, newest first: PIR key linking to `pir_url`, UTC start, computed end, minutes, canonical service (with the raw value when it differs), canonical severity, `decision_type` and `reviewed_by` with `reviewed_at`, `partner_id`, and `source` provenance once that column exists. A boundary-crossing outage shows both full duration and minutes counted in this window; merged overlaps are visibly grouped. A reconciliation line — outages and minutes counted — must equal the collapsed row's total. `ai_reasoning` and `reason` are never shown.
 - **Backtest control** — per partner, runs historical replay once terms bind (see §11)
 
 When terms land, scored rows gain a budget bar and status badge in the same table. No second screen.
@@ -600,6 +602,9 @@ No UI snapshot tests.
 | 10 | First contract entered as a term file, `StaticTermsProvider` switched on | 3 |
 | 11 | Scored UI: budget bars, status badges, penalty exposure | 6, 10 |
 | 12 | Calibrate engine constants against backtest output | 8, 10 |
-| 13+ | Slice two: upload, extraction, review UI, business view | 11 |
+| 13 | Business (CSM) view | 11, 12 |
+| 14+ | Slice two: contract upload, model extraction, review UI | 13 |
+
+**The business view is no longer bundled with slice two.** It depends only on real terms and the scored UI, both of which land as soon as contracts arrive. Contract upload and extraction remain blocked on the vendor data-handling question (open question 1) and should not gate the view that Partner Success actually asked for.
 
 Prompt 4 is the one to review most carefully — everything downstream inherits its correctness. Prompts 10 to 12 are gated on real contracts arriving, not on engineering time.

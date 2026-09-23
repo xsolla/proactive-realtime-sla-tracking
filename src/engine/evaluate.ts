@@ -1,4 +1,4 @@
-import { WINDOW_TIMEZONE } from "./constants";
+import { DATA_COVERAGE_START, MIN_BASELINE_MONTHS, WINDOW_TIMEZONE } from "./constants";
 import {
   durationMinutes,
   elapsedFraction,
@@ -241,41 +241,66 @@ function trackingRows<P extends string, S extends string>(
       service,
       usedMinutes,
       incidentCount: attributed.length,
-      comparison: baseline(service, serviceOutages, window, usedMinutes),
+      comparison: baseline(service, serviceOutages, window, usedMinutes, DATA_COVERAGE_START),
       outages: refs(attributed),
     });
   }
   return results;
 }
 
+const BASELINE_LOOKBACK_MONTHS = 6;
+
 function baseline<P extends string, S extends string>(
   service: S,
   outages: readonly UsableOutage<P, S>[],
   window: Window,
   currentMinutes: number,
+  coverageStart: string,
 ): BaselineComparison {
+  const coverageStartMs = utcDateMs(coverageStart);
   const year = window.start.getUTCFullYear();
   const month = window.start.getUTCMonth();
   const totals: number[] = [];
-  for (let delta = 1; delta <= 6; delta += 1) {
+  for (let delta = 1; delta <= BASELINE_LOOKBACK_MONTHS; delta += 1) {
     const monthInterval = {
       startMs: Date.UTC(year, month - delta, 1),
       endMs: Date.UTC(year, month - delta + 1, 1),
     };
+    if (monthInterval.startMs < coverageStartMs) {
+      continue;
+    }
     const attributed = attribute(
       outages.filter((row) => row.serviceId === service),
       monthInterval,
     );
     totals.push(countDowntime(attributed).usedMinutes);
   }
+  const coveredMonths = totals.length;
+  const monthsWithDowntime = totals.filter((minutes) => minutes > 0).length;
+  if (coveredMonths < MIN_BASELINE_MONTHS) {
+    return { kind: "insufficient_history", coveredMonths, monthsWithDowntime };
+  }
+  if (monthsWithDowntime === 0) {
+    return { kind: "no_prior_downtime", coveredMonths, monthsWithDowntime: 0 };
+  }
   const medianMinutes = median(totals);
   return {
-    currentMinutes,
+    kind: "compared",
+    coveredMonths,
+    monthsWithDowntime,
     medianMinutes,
-    months: 6,
+    currentMinutes,
     versusMedian:
       currentMinutes > medianMinutes ? "above" : currentMinutes < medianMinutes ? "below" : "equal",
   };
+}
+
+function utcDateMs(isoDate: string): number {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (match === null) {
+    throw new Error(`Coverage start must be YYYY-MM-DD, received ${isoDate}.`);
+  }
+  return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
 function median(values: readonly number[]): number {
@@ -332,10 +357,28 @@ function countDowntime<P extends string, S extends string>(
 }
 
 function refs<P extends string, S extends string>(rows: readonly Attributed<P, S>[]): OutageRef<S>[] {
-  return rows.map((row) => ({
-    pirKey: row.outage.pirKey,
-    service: row.outage.serviceId,
-    incidentStarted: row.outage.incidentStarted,
-    minutes: row.minutes,
-  }));
+  let groupEnd = Number.NEGATIVE_INFINITY;
+  let groupNumber = 0;
+  let mergeGroup = "";
+  return rows.map((row) => {
+    let countedMinutes: number;
+    if (row.interval.startMs > groupEnd) {
+      groupNumber += 1;
+      mergeGroup = String(groupNumber);
+      groupEnd = row.interval.endMs;
+      countedMinutes = row.minutes;
+    } else {
+      const extensionEnd = Math.max(groupEnd, row.interval.endMs);
+      countedMinutes = durationMinutes([{ startMs: groupEnd, endMs: extensionEnd }]);
+      groupEnd = extensionEnd;
+    }
+    return {
+      pirKey: row.outage.pirKey,
+      service: row.outage.serviceId,
+      incidentStarted: row.outage.incidentStarted,
+      minutes: row.minutes,
+      mergeGroup,
+      countedMinutes,
+    };
+  });
 }

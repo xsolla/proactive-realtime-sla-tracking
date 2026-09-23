@@ -63,9 +63,13 @@ function technicalOutage(
     severity: source.severity,
     decisionType: source.decisionType,
     reviewedBy: source.reviewedBy,
+    reviewedAt: source.reviewedAt === null ? null : source.reviewedAt.toISOString(),
     source: null,
     service: ref.service,
     incidentStarted: ref.incidentStarted.toISOString(),
-    minutes: ref.minutes,
+    minutesInWindow: ref.minutes,
+    totalMinutes: source.outageMinutes,
+    mergeGroup: ref.mergeGroup,
+    countedMinutes: ref.countedMinutes,
   };
 }

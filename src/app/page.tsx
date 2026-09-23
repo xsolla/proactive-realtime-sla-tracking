@@ -1,12 +1,22 @@
-export const dynamic = "force-dynamic";
+import { unstable_noStore as noStore } from "next/cache";
+import { loadDashboard } from "./dashboard/load";
+import { TechnicalDashboard } from "./dashboard/technical-dashboard";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ window?: string | string[] }>;
+}) {
+  noStore();
+  const params = await searchParams;
+  const requested = Array.isArray(params.window) ? undefined : params.window;
+  const model = await loadDashboard(requested);
   return (
-    <main className="flex flex-1 flex-col gap-4 p-6">
-      <h1 className="text-2xl font-semibold">SLA tracking</h1>
-      <p className="text-muted-foreground">
-        Scaffold only. Evaluation is not wired up yet.
-      </p>
+    <main className="mx-auto flex w-full min-w-0 max-w-6xl flex-col p-6">
+      <TechnicalDashboard model={model} />
     </main>
   );
 }

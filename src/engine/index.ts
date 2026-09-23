@@ -1,6 +1,8 @@
 export { evaluate } from "./evaluate";
 export {
+  DATA_COVERAGE_START,
   HIGH_CONSUMPTION,
+  MIN_BASELINE_MONTHS,
   MIN_CONSUMPTION,
   MIN_ELAPSED,
   WINDOW_TIMEZONE,
