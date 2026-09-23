@@ -1,5 +1,6 @@
 import type { OutageHealth, OutagePartition, UnusableReason } from "@/data";
 import type { BaselineComparison, PenaltyFigure, StatusReason } from "@/engine";
+import type { SeverityId } from "@/registry";
 import type { SlaTermsProvider } from "@/terms";
 import type { ViewerRole } from "./viewer";
 
@@ -12,7 +13,7 @@ export type FeedSources = {
   terms?: SlaTermsProvider;
 };
 
-/** Absent until sla_outages gains a source column. */
+/** Null until sla_outages gains a source column. */
 export type OutageProvenance = "backfill" | "pipeline";
 
 export type TechnicalOutage = {
@@ -20,7 +21,7 @@ export type TechnicalOutage = {
   pirUrl: string | null;
   /** External merchant id from sla_outages.partner_id. */
   partnerId: number | null;
-  severity: string | null;
+  severity: SeverityId;
   decisionType: string | null;
   reviewedBy: string | null;
   source: OutageProvenance | null;
@@ -95,6 +96,8 @@ export type SlaFeed = {
 export type UnusableRow = {
   pirKey: string;
   partner: string;
+  /** External merchant id, when the text parsed. */
+  partnerId: number | null;
   affectedService: string | null;
   incidentStarted: string | null;
   rawOutageMinutes: string | null;

@@ -20,6 +20,7 @@ export async function getSlaHealth(input: {
   const unusable: UnusableRow[] = partition.unusable.map((row) => ({
     pirKey: row.pirKey,
     partner: row.partner,
+    partnerId: row.merchantId,
     affectedService: row.affectedService,
     incidentStarted: row.incidentStarted === null ? null : row.incidentStarted.toISOString(),
     rawOutageMinutes: row.rawOutageMinutes,

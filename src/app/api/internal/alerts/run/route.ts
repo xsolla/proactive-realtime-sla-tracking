@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   );
 }
 
-/** Checked in this handler on every request. A private network does not replace it. */
+/** Checked here, on every request. Placement on a private network is not access control. */
 function sharedSecretMatches(request: Request): boolean {
   const expected = process.env.INTERNAL_SHARED_SECRET;
   const provided = request.headers.get(SECRET_HEADER);

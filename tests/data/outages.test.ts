@@ -1,12 +1,16 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { partitionOutages, slaOutages, summarizeOutageHealth } from "@/data";
+import { partitionOutages, slaAlertState, slaOutages, summarizeOutageHealth } from "@/data";
 import type { OutageSourceRow } from "@/data";
 
 type DriverMinutes = (typeof slaOutages)["$inferSelect"]["outageMinutes"];
 const _driverMinutesAreStrings: DriverMinutes extends string ? true : never = true;
 void _driverMinutesAreStrings;
+
+type DriverMerchantId = (typeof slaOutages)["$inferSelect"]["partnerId"];
+const _merchantIdsAreStrings: DriverMerchantId extends string | null ? true : never = true;
+void _merchantIdsAreStrings;
 
 function outage(overrides: Partial<OutageSourceRow> = {}): OutageSourceRow {
   return {
@@ -20,7 +24,6 @@ function outage(overrides: Partial<OutageSourceRow> = {}): OutageSourceRow {
     severity: "L1",
     reviewedBy: null,
     decisionType: null,
-    reason: null,
     reviewedAt: null,
     pirUrl: null,
     ...overrides,
@@ -88,6 +91,61 @@ describe("partitionOutages", () => {
     ]);
   });
 
+  it("parses partner_id to an integer and lets that id win over the partner name", () => {
+    const result = partitionOutages([
+      outage({
+        id: 1,
+        partner: "Kabam",
+        partnerId: "506855",
+        severity: "L1 — Critical",
+        decisionType: "ai_approved",
+        reviewedBy: "ada",
+      }),
+      outage({ id: 2, partner: "ignored", partnerId: "221437" }),
+    ]);
+
+    expect(result.usable[0]).toEqual(
+      expect.objectContaining({
+        partnerId: "second-dinner",
+        merchantId: 506855,
+        severity: "l1",
+        decisionType: "ai_approved",
+        reviewedBy: "ada",
+      }),
+    );
+    expect(typeof result.usable[0]?.merchantId).toBe("number");
+    const merchantSum = result.usable.reduce((total, row) => total + (row.merchantId ?? 0), 0);
+    expect(merchantSum).toBe(506855 + 221437);
+  });
+
+  it("falls back to the partner name when partner_id is absent", () => {
+    const result = partitionOutages([outage({ partner: "Kabam", partnerId: null })]);
+
+    expect(result.usable.map((row) => row.partnerId)).toEqual(["kabam"]);
+    expect(result.usable[0]?.merchantId).toBeNull();
+  });
+
+  it("does not fall back to the name when partner_id is present but unknown", () => {
+    const result = partitionOutages([outage({ partner: "Scopely", partnerId: "191692" })]);
+
+    expect(result.usable).toEqual([]);
+    expect(result.unusable[0]?.reasons).toEqual(["unresolved_partner"]);
+  });
+
+  it("does not let a non-numeric partner_id fall through to the name", () => {
+    const result = partitionOutages([outage({ partner: "Second Dinner", partnerId: "506855abc" })]);
+
+    expect(result.usable).toEqual([]);
+    expect(result.unusable[0]?.reasons).toEqual(["invalid_partner_id"]);
+  });
+
+  it("keeps a row with an unresolved severity out of the usable set", () => {
+    const result = partitionOutages([outage({ partnerId: "151639", severity: "L9 — Minor" })]);
+
+    expect(result.usable).toEqual([]);
+    expect(result.unusable[0]?.reasons).toEqual(["unresolved_severity"]);
+  });
+
   it("does not let a non-numeric outage_minutes string into the usable set", () => {
     const result = partitionOutages([outage({ id: 4, outageMinutes: "10minutes" })]);
 
@@ -115,6 +173,28 @@ describe("summarizeOutageHealth", () => {
     expect(health.countsByReason.missing_outage_minutes).toBe(1);
     expect(health.unresolvedPartnerNames).toEqual(["Also Missing", "Nope", "nope"]);
     expect(health.unresolvedServiceNames).toEqual(["Not A Service"]);
+    expect(health.partnersWithZeroAttributedRows).not.toContain("scopely");
+    expect(health.partnersWithZeroAttributedRows).toEqual([
+      "niantic",
+      "kabam",
+      "warner-brothers",
+      "bandai-namco",
+      "second-dinner",
+      "roblox",
+      "twitch",
+      "mihoyo",
+      "nexters",
+      "netmarble",
+    ]);
+  });
+
+  it("counts a partner with only an otherwise-unusable row as attributed", () => {
+    const health = summarizeOutageHealth(
+      partitionOutages([outage({ partner: "Roblox", partnerId: "38519", outageMinutes: null })]),
+    );
+
+    expect(health.partnersWithZeroAttributedRows).not.toContain("roblox");
+    expect(health.usableCount).toBe(0);
   });
 });
 
@@ -132,7 +212,7 @@ describe("sla_alert_state migration", () => {
     expect(sql).toContain("create table");
     expect(sql).toContain("sla_alert_state");
     for (const column of [
-      "partner_id",
+      "partner_slug",
       "scope_id",
       "period",
       "last_status",
@@ -145,5 +225,13 @@ describe("sla_alert_state migration", () => {
     expect(sql).toContain("primary key");
     expect(sql).toMatch(/alert_count[\s\S]*default 0/);
     expect(sql).not.toContain("sla_outages");
+    expect(slaAlertState.partnerSlug.name).toBe("partner_slug");
+
+    const snapshots = readdirSync(path.join(migrationsDir, "meta"))
+      .filter((name) => name.endsWith("_snapshot.json"))
+      .sort();
+    const latest = readFileSync(path.join(migrationsDir, "meta", snapshots.at(-1) ?? ""), "utf8");
+    expect(latest).toContain('"partner_slug"');
+    expect(latest).not.toContain('"partner_id"');
   });
 });

@@ -8,6 +8,13 @@
       "when": 1790094476490,
       "tag": "0000_sla_alert_state",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790180000000,
+      "tag": "0001_sla_alert_state_partner_slug",
+      "breakpoints": true
     }
   ]
 }

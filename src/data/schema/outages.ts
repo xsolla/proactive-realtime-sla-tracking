@@ -3,11 +3,15 @@ import { numeric, pgTable, serial, text, timestamp, unique } from "drizzle-orm/p
 /**
  * Read-only mirror of the n8n-owned sla_outages table.
  * Do not generate a migration for this table and do not write to it.
+ *
  * outage_minutes is numeric and partner_id is text. node-postgres returns both
  * as strings. Leave them as strings here. partitionOutages parses each once.
  *
  * partner_id is an external merchant id, for example "506855". It is not a
  * foreign key. Do not join it to anything.
+ *
+ * reason and ai_reasoning exist on the live table and are intentionally
+ * omitted. They are pipeline audit text and are read by nobody here.
  */
 export const slaOutages = pgTable(
   "sla_outages",
@@ -23,7 +27,6 @@ export const slaOutages = pgTable(
     severity: text("severity"),
     reviewedBy: text("reviewed_by"),
     decisionType: text("decision_type"),
-    reason: text("reason"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }).defaultNow(),
     pirUrl: text("pir_url"),
   },

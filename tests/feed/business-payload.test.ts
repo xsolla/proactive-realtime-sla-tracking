@@ -17,8 +17,7 @@ function scoredOutage(): OutageSourceRow {
     severity: "L1 — Critical",
     reviewedBy: "ada",
     decisionType: "ai_approved",
-    reason: null,
-    reviewedAt: null,
+    reviewedAt: new Date("2026-04-16T13:00:00.000Z"),
     pirUrl: `https://jira.example/browse/${PIR_KEY}`,
   };
 }
