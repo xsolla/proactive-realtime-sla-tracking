@@ -1,16 +1,16 @@
-import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { slaAlertState } from "./schema/alert-state";
 import { slaOutages } from "./schema/outages";
 
 const schema = { slaOutages, slaAlertState };
 
-export type Database = NodePgDatabase<typeof schema>;
-
-export function createDatabase(connectionString: string): Database {
+export function createDatabase(connectionString: string) {
   const pool = new Pool({ connectionString });
   return drizzle(pool, { schema });
 }
+
+export type Database = ReturnType<typeof createDatabase>;
 
 let database: Database | undefined;
 

@@ -44,3 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# historical replay written by scripts/backtest.ts
+/backtest.json
+

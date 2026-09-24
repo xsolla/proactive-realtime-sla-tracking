@@ -71,6 +71,29 @@ const eslintConfig = defineConfig([
     files: [files],
     rules: restrictedImports(depth),
   })),
+  {
+    files: ["scripts/backtest.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "(?:^|/)alerts(?:/|$)",
+              message:
+                "The backtest imports the engine directly and cannot import the alerting module.",
+              caseSensitive: true,
+            },
+            {
+              regex: "slack",
+              message: "The backtest cannot import a Slack client.",
+              caseSensitive: false,
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
