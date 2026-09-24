@@ -1,12 +1,18 @@
 import { timingSafeEqual } from "node:crypto";
 import { unstable_noStore as noStore } from "next/cache";
 import { NextResponse } from "next/server";
+import { parseAlertRunRequest, runAlerts, type AlertRunReport } from "@/alerts";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 const SECRET_HEADER = "x-internal-secret";
 
+/**
+ * n8n calls this in two ways: a schedule at 01:00 and 13:00 UTC, and once
+ * after a successful ingestion upsert. Each call is one evaluation pass.
+ * n8n holds no alert logic.
+ */
 export async function POST(request: Request) {
   noStore();
   if (!sharedSecretMatches(request)) {
@@ -15,10 +21,29 @@ export async function POST(request: Request) {
       { status: 401, headers: { "Cache-Control": "no-store" } },
     );
   }
-  return NextResponse.json(
-    { error: "Not implemented" },
-    { status: 501, headers: { "Cache-Control": "no-store" } },
-  );
+
+  const parsed = parseAlertRunRequest(await request.text());
+  if ("error" in parsed) {
+    return json(
+      {
+        scopesEvaluated: 0,
+        transitionsFound: 0,
+        alertsSent: 0,
+        errors: [parsed.error],
+        dryRun: false,
+        planned: [],
+      },
+      400,
+    );
+  }
+
+  const report = await runAlerts({ asOf: new Date(), dryRun: parsed.dryRun });
+  const status = report.errors.some((error) => error.startsWith("Could not evaluate")) ? 500 : 200;
+  return json(report, status);
+}
+
+function json(body: AlertRunReport, status: number): NextResponse {
+  return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 /** Checked here, on every request. Placement on a private network is not access control. */
