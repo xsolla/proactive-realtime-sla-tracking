@@ -15,18 +15,22 @@ Track, in real time, how production performance measures against SLAs contractua
 
 This spec covers six subsystems:
 
-| # | Subsystem | Slice |
-| --- | --- | --- |
-| 1 | Evaluation engine | One |
-| 2 | Shared feed and role shaping | One |
-| 3 | Technical (engineer) view | One |
-| 4 | Alerting | One |
-| 5 | Business (CSM) view | One-and-a-half — gated on real terms only |
-| 6 | Contract upload and term extraction | Two — gated on OQ-1 |
+
+| #   | Subsystem                           | Slice                                     |
+| --- | ----------------------------------- | ----------------------------------------- |
+| 1   | Evaluation engine                   | One                                       |
+| 2   | Shared feed and role shaping        | One                                       |
+| 3   | Technical (engineer) view           | One                                       |
+| 4   | Alerting                            | One                                       |
+| 5   | Business (CSM) view                 | One-and-a-half — gated on real terms only |
+| 6   | Contract upload and term extraction | Two — gated on OQ-1                       |
+
 
 Slice one is independently useful and shippable. The business view follows as soon as real contracts land; it is deliberately not bundled with upload and extraction, which carry an unresolved governance dependency.
 
 ---
+
+
 
 ## 2. Context and constraints
 
@@ -46,7 +50,11 @@ Slice one is independently useful and shippable. The business view follows as so
 
 ---
 
+
+
 ## 3. Architecture decisions
+
+
 
 ### AD-1 — Next.js App Router, TypeScript, single deployable
 
@@ -100,6 +108,8 @@ n8n is a scheduler only. It holds no SLA logic and touches no SLA data. Any sche
 
 ---
 
+
+
 ## 4. Repo layout and module boundaries
 
 Single Next.js application at repo root.
@@ -129,32 +139,38 @@ Single Next.js application at repo root.
 
 ---
 
+
+
 ## 5. Data layer
+
+
 
 ### 5.0 Actual `sla_outages` schema (observed 2026-09-22)
 
 Confirmed from live rows, not assumed. The dashboard mirrors this read-only.
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| `id` | int | surrogate key |
-| `pir_key` | text | e.g. `GTO-543`; part of the pipeline's idempotency key |
-| `partner` | text | resolved partner display name, human-approved; a display convenience that can drift |
-| `partner_id` | **text** | **already present.** The external *merchant id* (e.g. `"506855"`), not a FK. Authoritative partner identity per the attribution step. String, so parse at the edge |
-| `incident_started` | timestamptz | UTC |
-| `affected_service` | text | free text, needs canonical resolution |
-| `outage_minutes` | numeric | **returns as a string** from node-postgres |
-| `severity` | text | free text, e.g. `L1 — Critical`; needs canonical resolution |
-| `reviewed_by` | text | reviewer identity — engineer/audit detail |
-| `decision_type` | text | e.g. `ai_approved` — human-review provenance |
-| `reason` | text | reviewer note; usually empty. **Not mapped** |
-| `reviewed_at` | timestamptz | |
-| `pir_url` | text | constructed Jira link |
-| `ai_reasoning` | text | batch-level attribution narrative across all partners, including which partners had **no** matches. **Not mapped** |
+
+| Column             | Type        | Notes                                                                                                                                                              |
+| ------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`               | int         | surrogate key                                                                                                                                                      |
+| `pir_key`          | text        | e.g. `GTO-543`; part of the pipeline's idempotency key                                                                                                             |
+| `partner`          | text        | resolved partner display name, human-approved; a display convenience that can drift                                                                                |
+| `partner_id`       | **text**    | **already present.** The external *merchant id* (e.g. `"506855"`), not a FK. Authoritative partner identity per the attribution step. String, so parse at the edge |
+| `incident_started` | timestamptz | UTC                                                                                                                                                                |
+| `affected_service` | text        | free text, needs canonical resolution                                                                                                                              |
+| `outage_minutes`   | numeric     | **returns as a string** from node-postgres                                                                                                                         |
+| `severity`         | text        | free text, e.g. `L1 — Critical`; needs canonical resolution                                                                                                        |
+| `reviewed_by`      | text        | reviewer identity — engineer/audit detail                                                                                                                          |
+| `decision_type`    | text        | e.g. `ai_approved` — human-review provenance                                                                                                                       |
+| `reason`           | text        | reviewer note; usually empty. **Not mapped**                                                                                                                       |
+| `reviewed_at`      | timestamptz |                                                                                                                                                                    |
+| `pir_url`          | text        | constructed Jira link                                                                                                                                              |
+| `ai_reasoning`     | text        | batch-level attribution narrative across all partners, including which partners had **no** matches. **Not mapped**                                                 |
+
 
 **Two fields are deliberately not mapped.** `ai_reasoning` and `reason` are pipeline audit fields. `ai_reasoning` is a batch-level narrative describing an entire attribution run across all partners, not a per-row explanation, and carries merchant IDs and internal project names. Neither has per-row evaluation value. Both remain in the table as the contemporaneous attribution audit record — valuable in a future penalty dispute — but are read by nobody in this application. Stored, not wired.
 
-**Not to be confused with the engine's `StatusReason`.** That is computed by the engine, explains why a scope holds its status, and is unrelated to these ingestion fields. See §7.6.
+**Not to be confused with the engine's** `StatusReason`**.** That is computed by the engine, explains why a scope holds its status, and is unrelated to these ingestion fields. See §7.6.
 
 **Fields with no per-row confidence signal.** Attribution has already been resolved to a `partner` string upstream. There is no per-row match-method or confidence column, so the technical view shows no attribution-confidence indicator — there is no data behind it. `decision_type` (`ai_approved` vs. a human correction) is the available provenance signal and is shown instead.
 
@@ -197,7 +213,7 @@ The authoritative merchant id is already written by the pipeline as `partner_id`
 
 **Free-text values require canonical resolution.** Partner names, service names and severity labels all arrive as free text and will not match across sources. The registry holds each pilot partner (with its `merchantIds` list and name aliases), each SLA-relevant service, and each severity level with its variants.
 
-Partner resolution is **`partner_id` first, name second.** `partner_id` holds the external merchant id (a string, e.g. `"506855"`) and is the authoritative match — the attribution step marks it authoritative. Parse it to an integer once at the data-layer edge and match against the registry's `merchantIds` list. The free-text `partner` name is the fallback only for rows without a `partner_id`, such as historical backfill. Where `partner` and `partner_id` disagree, `partner_id` wins. `merchantIds` is modelled as a list per partner, since a partner may span several merchant accounts.
+Partner resolution is `partner_id` **first, name second.** `partner_id` holds the external merchant id (a string, e.g. `"506855"`) and is the authoritative match — the attribution step marks it authoritative. Parse it to an integer once at the data-layer edge and match against the registry's `merchantIds` list. The free-text `partner` name is the fallback only for rows without a `partner_id`, such as historical backfill. Where `partner` and `partner_id` disagree, `partner_id` wins. `merchantIds` is modelled as a list per partner, since a partner may span several merchant accounts.
 
 Unresolved values go to the health output and are excluded from evaluation — never silently dropped, never creating a phantom partner.
 
@@ -205,12 +221,14 @@ Unresolved values go to the health output and are excluded from evaluation — n
 
 `scripts/verify-registry.ts` is a read-only script run against the live database, separate from the test suite (which stays hermetic). It reports where the data disagrees with the const registry:
 
-| Finding | Meaning |
-| --- | --- |
-| Unknown id | A `partner_id` present in data but in no registry entry. Rows the dashboard will refuse to evaluate |
-| Name disagreement | One `partner_id` under two partner names, or one name under two ids. The free-text name has drifted from the authoritative id |
-| Zero coverage | A registry partner with no rows. Expected for some partners today, but stated explicitly — "no rows" and "no outages" look identical and only one is good news |
-| Confirmed | Ids present in both, with row counts, so the healthy case is visible rather than inferred from silence |
+
+| Finding           | Meaning                                                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unknown id        | A `partner_id` present in data but in no registry entry. Rows the dashboard will refuse to evaluate                                                            |
+| Name disagreement | One `partner_id` under two partner names, or one name under two ids. The free-text name has drifted from the authoritative id                                  |
+| Zero coverage     | A registry partner with no rows. Expected for some partners today, but stated explicitly — "no rows" and "no outages" look identical and only one is good news |
+| Confirmed         | Ids present in both, with row counts, so the healthy case is visible rather than inferred from silence                                                         |
+
 
 It exits non-zero on unknown ids or name disagreements, and **never mutates the registry**. An unrecognised id is a question for a person, not a row to auto-create — auto-adding would silently create the phantom partner the resolution rules exist to prevent.
 
@@ -218,7 +236,11 @@ Canonical merchant ids: Scopely 151639, Niantic 221437, Kabam 237137, Warner Bro
 
 ---
 
+
+
 ## 6. Terms provider and lifecycle
+
+
 
 ### 6.1 Interface
 
@@ -270,11 +292,13 @@ interface SlaTerms {
 
 ### 6.4 Lifecycle
 
-| State | Engine behaviour |
-| --- | --- |
-| `tracking_only` | Downtime recorded and reported. No target, status or exposure. |
+
+| State                  | Engine behaviour                                                             |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `tracking_only`        | Downtime recorded and reported. No target, status or exposure.               |
 | `terms_pending_review` | Identical to `tracking_only`. Unconfirmed terms are invisible to the engine. |
-| `contract_bound` | Full evaluation. |
+| `contract_bound`       | Full evaluation.                                                             |
+
 
 Only `contract_bound` scopes are returned by `listScopes`.
 
@@ -289,7 +313,11 @@ Swapping provider is one line of composition in `feed/`. Nothing else changes.
 
 ---
 
+
+
 ## 7. Evaluation engine
+
+
 
 ### 7.1 Signature
 
@@ -369,6 +397,8 @@ export const HIGH_CONSUMPTION = 0.75
 export const WINDOW_TIMEZONE = 'UTC'
 ```
 
+
+
 ### 7.5 Penalty
 
 Two figures, never summed into one headline:
@@ -386,7 +416,11 @@ Every scored result carries a structured `StatusReason` — which rule fired and
 
 ---
 
+
+
 ## 8. Feed and role shaping
+
+
 
 ### 8.1 Composition
 
@@ -408,17 +442,19 @@ Loads outages, resolves identities, fetches scopes, calls `evaluate()`, shapes b
 
 ### 8.3 Routes
 
-| Route | Purpose |
-| --- | --- |
-| `GET /api/sla/feed` | Dashboard data |
-| `GET /api/sla/health` | Unusable rows, unresolved names, missing fields (GTOC-45) |
-| `POST /api/internal/alerts/run` | Scheduled alert evaluation |
+
+| Route                           | Purpose                                                   |
+| ------------------------------- | --------------------------------------------------------- |
+| `GET /api/sla/feed`             | Dashboard data                                            |
+| `GET /api/sla/health`           | Unusable rows, unresolved names, missing fields (GTOC-45) |
+| `POST /api/internal/alerts/run` | Scheduled alert evaluation                                |
+
 
 The internal route triggers writes and sends messages. It requires a shared-secret header checked in the route itself, not VPN placement alone.
 
 ### 8.4 Caching — mandatory
 
-**Every route and server component in this app sets `export const dynamic = 'force-dynamic'` and `no-store`.**
+**Every route and server component in this app sets** `export const dynamic = 'force-dynamic'` **and** `no-store`**.**
 
 Next.js caches aggressively by default. A dashboard silently serving a fifteen-minute-old evaluation destroys the premise of compute-on-read, and fails invisibly by showing plausible stale numbers rather than an error. This belongs in `project.mdc` as a standing rule.
 
@@ -428,7 +464,11 @@ The feed carries its own `asOf` and the health summary, so the UI can always sta
 
 ---
 
+
+
 ## 9. Technical view
+
+
 
 ### 9.1 What it shows today
 
@@ -471,7 +511,11 @@ The app owns its own theme. Design tokens are defined once as CSS custom propert
 
 ---
 
+
+
 ## 10. Alerting
+
+
 
 ### 10.1 Flow
 
@@ -492,9 +536,9 @@ A slow run overlapping the next one would have both observe the same stale statu
 
 ### 10.4 Recipients and content
 
-- CSM — plain language, credit percentage at stake, projected figure
+- Legal — plain language, credit percentage at stake, projected figure
 - Engineer — PIR keys, scope detail, raw inputs
-- Breach — Legal and CSM together
+- Breach — Legal and Engineer together
 
 Both built from the same evaluation by separate message builders. No alerts during excluded maintenance.
 
@@ -507,6 +551,8 @@ The lighter "unusually bad month" heads-up from GTOC-46, computed against that p
 An n8n workflow on a timer makes one authenticated POST. It contains no SLA logic, no branching, and touches no SLA data. Separate from the ingestion workflow, sharing only the platform.
 
 ---
+
+
 
 ## 11. Backtest (GTOC-42)
 
@@ -524,7 +570,11 @@ Same `evaluate()`, `asOf` stepped across historical dates.
 
 ---
 
+
+
 ## 12. Contract upload and extraction (slice two)
+
+
 
 ### 12.1 Flow
 
@@ -546,23 +596,27 @@ Signed partner contracts are commercially sensitive documents. Sending them to a
 
 ---
 
+
+
 ## 13. Testing
 
 **The engine carries nearly all of it** — pure unit tests with fixture terms, no database, no mocking.
 
 Golden cases to write before implementation:
 
-| Case | Asserts |
-| --- | --- |
-| 23:40 on the final day, 50 minutes | 20 minutes to closing window, 30 to opening |
-| Two overlapping PIRs, same scope | Merged, counted once |
-| Payments outage, `includesScopedServices: true` | Burns both allowances |
-| Payments outage, `includesScopedServices: false` | Burns Payments only |
-| Allowance exhausted on day two | Breaching, both floors overridden |
-| 90-second outage, day seven | Meeting, not at risk — consumption floor not met |
-| 80% consumed, day 28 | At risk via level trigger regardless of burn rate |
-| Zero allowance scope | Handled without division error |
-| Terms effective from March, replay from January | No January or February exposure |
+
+| Case                                             | Asserts                                           |
+| ------------------------------------------------ | ------------------------------------------------- |
+| 23:40 on the final day, 50 minutes               | 20 minutes to closing window, 30 to opening       |
+| Two overlapping PIRs, same scope                 | Merged, counted once                              |
+| Payments outage, `includesScopedServices: true`  | Burns both allowances                             |
+| Payments outage, `includesScopedServices: false` | Burns Payments only                               |
+| Allowance exhausted on day two                   | Breaching, both floors overridden                 |
+| 90-second outage, day seven                      | Meeting, not at risk — consumption floor not met  |
+| 80% consumed, day 28                             | At risk via level trigger regardless of burn rate |
+| Zero allowance scope                             | Handled without division error                    |
+| Terms effective from March, replay from January  | No January or February exposure                   |
+
 
 Data layer: one test pinning that `outage_minutes` sums numerically rather than concatenating.
 
@@ -572,39 +626,21 @@ No UI snapshot tests.
 
 ---
 
+
+
 ## 14. Open questions
 
-| # | Question | Blocks | Owner |
-| --- | --- | --- | --- |
-| 1 | Vendor data handling for contract documents sent to an external API | Slice two implementation | Needs an owner |
-| 2 | Which Slack channels receive CSM, engineer and Legal alerts | Alerting | Partner Success |
-| 3 | Who confirms extracted terms — CSM, Legal, or both | Slice two | Partner Success / Legal |
-| 4 | Deployment target and how n8n reaches the internal endpoint | Alerting | Engineering |
-| 5 | `source` discriminator column (blocks backfill import). `partner_id`/merchant id is already written by the pipeline | Data layer, backfill | Engineering / n8n owner |
+
+| #   | Question                                                                                                            | Blocks                   | Owner                   |
+| --- | ------------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------- |
+| 1   | Vendor data handling for contract documents sent to an external API                                                 | Slice two implementation | Needs an owner          |
+| 2   | Which Slack channels receive CSM, engineer and Legal alerts                                                         | Alerting                 | Partner Success         |
+| 3   | Who confirms extracted terms — CSM, Legal, or both                                                                  | Slice two                | Partner Success / Legal |
+| 4   | Deployment target and how n8n reaches the internal endpoint                                                         | Alerting                 | Engineering             |
+| 5   | `source` discriminator column (blocks backfill import). `partner_id`/merchant id is already written by the pipeline | Data layer, backfill     | Engineering / n8n owner |
+
 
 **Closed 2026-09-21.** `outage_minutes` is wall-clock elapsed time, always positive, and together with `incident_started` is the sole basis for the timeline. Interval merging is valid as specified.
 
 ---
 
-## 15. Build sequence
-
-| Prompt | Scope | Depends on |
-| --- | --- | --- |
-| 1 | App scaffold, `project.mdc`, `engine-purity.mdc`, ESLint purity zone, theme tokens | — |
-| 2 | Registry, data layer, health partitioning | 1 |
-| 3 | Terms provider, types, lifecycle, empty / static / fixture implementations | 1 |
-| 4 | Engine: intervals, status, penalty, reason — with the golden tests | 3 |
-| 5 | Feed, serialisers, viewer, routes | 2, 4 |
-| 6 | Technical view — tracking-only rendering | 5 |
-| 7 | Alert state, transition detection, message builders, internal route | 5 |
-| 8 | Backtest script | 4 |
-| 9 | n8n scheduling workflow | 7 |
-| 10 | First contract entered as a term file, `StaticTermsProvider` switched on | 3 |
-| 11 | Scored UI: budget bars, status badges, penalty exposure | 6, 10 |
-| 12 | Calibrate engine constants against backtest output | 8, 10 |
-| 13 | Business (CSM) view | 11, 12 |
-| 14+ | Slice two: contract upload, model extraction, review UI | 13 |
-
-**The business view is no longer bundled with slice two.** It depends only on real terms and the scored UI, both of which land as soon as contracts arrive. Contract upload and extraction remain blocked on the vendor data-handling question (open question 1) and should not gate the view that Partner Success actually asked for.
-
-Prompt 4 is the one to review most carefully — everything downstream inherits its correctness. Prompts 10 to 12 are gated on real contracts arriving, not on engineering time.
