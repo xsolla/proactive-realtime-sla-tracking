@@ -44,6 +44,7 @@ describe("overview", () => {
     expect(html).toMatch(/class="[^"]*border-danger[^"]*"/);
     expect(html).toContain("99.950% / ");
     expect(html).toContain("351.9% consumed");
+    expect(html).not.toContain(">Credit<");
     expect(html).toContain('href="/partners/scopely?window=2026-09"');
     expect(html).not.toContain("—");
   });
@@ -96,7 +97,9 @@ describe("overview", () => {
       phase: "open", windowKey: "2026-09", failure: null, role: "technical",
     });
     const numericHtml = renderToStaticMarkup(<OverviewPage view={numeric} />);
-    expect(numericHtml).toContain("10% · 1,000 XXX → 25% · 2,500 XXX");
+    expect(numeric.attention[0]?.term.credit.text).toBe("10% · 1,000 XXX → 25% · 2,500 XXX");
+    expect(numericHtml).not.toContain(">Credit<");
+    expect(numericHtml).not.toContain("10% · 1,000 XXX → 25% · 2,500 XXX");
     expect(numericHtml).not.toContain("35%");
     expect(numericHtml).not.toContain("3,500");
 
@@ -107,7 +110,8 @@ describe("overview", () => {
     });
     expect(entered.attention[0]?.term.credit.text).toBe("penalty clause, not yet entered");
     const enteredHtml = renderToStaticMarkup(<OverviewPage view={entered} />);
-    expect(enteredHtml).toContain("penalty clause, not yet entered");
+    expect(enteredHtml).not.toContain(">Credit<");
+    expect(enteredHtml).not.toContain("penalty clause, not yet entered");
     expect(enteredHtml).not.toContain("→");
     expect(enteredHtml).not.toMatch(/>0%</);
   });

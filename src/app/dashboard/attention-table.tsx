@@ -20,7 +20,6 @@ export function AttentionTable({ rows, failure }: { rows: readonly AttentionRow[
           <TableHeaderCell>Status</TableHeaderCell>
           <TableHeaderCell numeric>Target / Actual</TableHeaderCell>
           <TableHeaderCell>Error budget</TableHeaderCell>
-          <TableHeaderCell numeric>Credit</TableHeaderCell>
         </tr>
       </TableHead>
       <TableBody>
@@ -39,7 +38,6 @@ export function AttentionTable({ rows, failure }: { rows: readonly AttentionRow[
               <BudgetBar usedMinutes={row.term.usedMinutes} allowedMinutes={row.term.allowedMinutes} tone={budgetTone[row.term.status]} />
               <span className="mt-1 block font-mono text-xs text-muted-foreground">{row.term.consumedPercent}</span>
             </td>
-            <td className="px-3 py-3 text-right align-top font-mono text-sm tabular-nums">{row.term.credit.text}</td>
           </tr>
         ))}
       </TableBody>
