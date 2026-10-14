@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { partitionOutages, type IngestionHealth } from "@/data";
 import { getSlaFeed, getSlaHealth } from "@/feed";
-import { FixtureTermsProvider } from "@/terms/fixture";
+import { FixtureTermsProvider } from "../support/fixture-terms-provider";
 
 const PIR_KEY = "GTO-9999";
 

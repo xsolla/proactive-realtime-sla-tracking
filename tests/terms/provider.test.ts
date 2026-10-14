@@ -1,10 +1,11 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { PARTNERS, type PartnerId } from "@/registry";
 import { EmptyTermsProvider, StaticTermsProvider, loadContractFile } from "@/terms";
 import type { ContractScope, HandAuthoredTermsFile, SlaScope } from "@/terms";
 import { EXAMPLE_NOT_A_CONTRACT } from "@/terms/contracts/example.not-a-contract";
+import { FixtureTermsProvider } from "../support/fixture-terms-provider";
 
 const AS_OF = new Date("2026-06-15T00:00:00.000Z");
 
@@ -172,9 +173,10 @@ describe("StaticTermsProvider", () => {
 });
 
 describe("FixtureTermsProvider", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.resetModules();
+  it("lives outside the production source tree", () => {
+    expect(existsSync(path.resolve("src/terms/fixture.ts"))).toBe(false);
+    expect(existsSync(path.resolve("src/terms/fixture-guard.ts"))).toBe(false);
+    expect(existsSync(path.resolve("tests/support/fixture-terms-provider.ts"))).toBe(true);
   });
 
   it("is not imported by a route, a page, or the terms barrel", () => {
@@ -190,16 +192,7 @@ describe("FixtureTermsProvider", () => {
     }
   });
 
-  it("throws when NODE_ENV is production", async () => {
-    vi.resetModules();
-    vi.stubEnv("NODE_ENV", "production");
-
-    await expect(import("@/terms/fixture")).rejects.toThrow(/production/);
-  });
-
   it("returns both includesScopedServices values and hides terms_pending_review", async () => {
-    vi.stubEnv("NODE_ENV", "test");
-    const { FixtureTermsProvider } = await import("@/terms/fixture");
     const provider = new FixtureTermsProvider();
 
     const scopely = await provider.listScopes("scopely", AS_OF);

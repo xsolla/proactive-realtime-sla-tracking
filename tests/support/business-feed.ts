@@ -1,6 +1,6 @@
 import { partitionOutages, type IngestionHealth, type OutageSourceRow } from "@/data";
 import { getSlaFeed } from "@/feed";
-import { FixtureTermsProvider } from "@/terms/fixture";
+import { FixtureTermsProvider } from "./fixture-terms-provider";
 
 export const PIR_KEY = "GTO-543";
 export const TRACKING_PIR_KEY = "GTO-544";

@@ -1,4 +1,3 @@
-import "@/terms/fixture-guard";
 import type { SelectableTermsFile } from "@/terms/select";
 import type { SlaTerms } from "@/terms/types";
 
