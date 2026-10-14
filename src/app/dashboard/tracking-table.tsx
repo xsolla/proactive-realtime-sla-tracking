@@ -19,7 +19,7 @@ function Facts({ row, unavailable }: { row: TrackingView; unavailable: boolean }
 
 export function TrackingTable({ partnerName, rows, unavailable = false }: { partnerName: string; rows: readonly TrackingView[]; unavailable?: boolean }) {
   return (
-    <div className="min-w-0 overflow-x-auto rounded border border-border">
+    <div className="min-w-0 overflow-x-auto rounded-card border border-border bg-card text-card-foreground">
       <Table framed={false} caption={`Recorded downtime for ${partnerName}`}>
         <TableHead>
           <tr className="border-b border-border">
@@ -41,7 +41,7 @@ export function TrackingTable({ partnerName, rows, unavailable = false }: { part
                     <div className="flex items-center"><span className="w-10" /><div className="min-w-0 flex-1"><Facts row={row} unavailable={unavailable} /></div></div>
                   ) : (
                     <details data-outages={outages === null ? undefined : ""} data-disclosure="" className="group">
-                      <summary aria-expanded={false} aria-controls={panelId} aria-label={`Show ${outages === null ? "trend" : "outages"} for ${partnerName}, ${row.service}`} className="disclosure flex cursor-pointer list-none items-center">
+                      <summary aria-expanded={false} aria-controls={panelId} aria-label={`Show ${outages === null ? "trend" : "outages"} for ${partnerName}, ${row.service}`} className="disclosure flex cursor-pointer list-none items-center transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
                         <span className="px-3 text-foreground group-open:[&_svg]:rotate-90"><Caret direction="right" /></span>
                         <div className="min-w-0 flex-1"><Facts row={row} unavailable={unavailable} /></div>
                       </summary>

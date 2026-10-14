@@ -159,14 +159,14 @@ export type ContractFormScope = {
   target: string;
   penaltyKind: "" | ContractPenalty["kind"];
   tiers: ContractFormTier[];
-  perScopeCap: number | null;
+  perScopeCap: string;
   sourceClause: string;
 };
 
 export type ContractFormState = {
   effectiveFrom: string;
   effectiveTo: string;
-  contractAggregateCap: number | null;
+  contractAggregateCap: string;
   scopes: ContractFormScope[];
   updatedBy: string;
   expectedVersion: number | null;
@@ -181,7 +181,7 @@ export function emptyScope(scopeId: string): ContractFormScope {
     target: "",
     penaltyKind: "",
     tiers: [{ atOrAbove: "0", credit: "", fixed: true }],
-    perScopeCap: null,
+    perScopeCap: "",
     sourceClause: "",
   };
 }
@@ -190,7 +190,7 @@ export function emptyContractForm(): ContractFormState {
   return {
     effectiveFrom: "",
     effectiveTo: "",
-    contractAggregateCap: null,
+    contractAggregateCap: "",
     scopes: [emptyScope("scope-1")],
     updatedBy: "",
     expectedVersion: null,
@@ -213,6 +213,13 @@ function parsePercent(value: string): number | null {
   }
   const number = Number(trimmed);
   return Number.isFinite(number) ? number : null;
+}
+
+function parseOptionalPercent(value: string): number | null | undefined {
+  if (value.trim() === "") {
+    return null;
+  }
+  return parsePercent(value) ?? undefined;
 }
 
 function probeDate(partner: PartnerId, field: "effectiveFrom" | "effectiveTo", value: string): string | null {
@@ -267,6 +274,9 @@ export function reviewContractForm(partner: PartnerId, form: ContractFormState):
   }
   if (form.scopes.length === 0) {
     pushError(errors, "scopes", "Add at least one scope.");
+  }
+  if (parseOptionalPercent(form.contractAggregateCap) === undefined) {
+    pushError(errors, "contractAggregateCap", "Enter a percent or leave this blank.");
   }
 
   for (const scope of form.scopes) {
@@ -340,6 +350,9 @@ function reviewScope(
     pushError(errors, field("penalty"), "Choose a penalty.");
   } else if (scope.penaltyKind === "tiers") {
     reviewTiers(partner, scope, errors);
+    if (parseOptionalPercent(scope.perScopeCap) === undefined) {
+      pushError(errors, field("perScopeCap"), "Enter a percent or leave this blank.");
+    }
   }
 
   if (scope.sourceClause.trim() === "") {
@@ -349,6 +362,10 @@ function reviewScope(
 
 function reviewTiers(partner: PartnerId, scope: ContractFormScope, errors: FieldIssue[]) {
   const field = `scopes.${scope.scopeId}.tiers`;
+  const perScopeCap = parseOptionalPercent(scope.perScopeCap);
+  if (perScopeCap === undefined) {
+    return;
+  }
   const parsed: { atOrAbove: number; credit: number }[] = [];
   for (const [index, tier] of scope.tiers.entries()) {
     const atOrAbove = parsePercent(tier.atOrAbove);
@@ -374,7 +391,7 @@ function reviewTiers(partner: PartnerId, scope: ContractFormScope, errors: Field
           scopeId: scope.scopeId,
           services: ["payments"],
           target: 100,
-          penalty: { kind: "tiers", tiers: parsed, perScopeCap: scope.perScopeCap },
+          penalty: { kind: "tiers", tiers: parsed, perScopeCap },
           sourceClause: "probe",
         },
       ],
@@ -401,10 +418,14 @@ export function contractBodyFromForm(form: ContractFormState): ContractTermsBody
   if (form.effectiveFrom.trim() === "") {
     return null;
   }
+  const contractAggregateCap = parseOptionalPercent(form.contractAggregateCap);
+  if (contractAggregateCap === undefined) {
+    return null;
+  }
   return {
     effectiveFrom: form.effectiveFrom.trim(),
     effectiveTo: form.effectiveTo.trim() === "" ? null : form.effectiveTo.trim(),
-    contractAggregateCap: form.contractAggregateCap,
+    contractAggregateCap,
     scopes,
   };
 }
@@ -452,6 +473,10 @@ function penaltyFromForm(scope: ContractFormScope): ContractPenalty | null {
   if (scope.penaltyKind !== "tiers") {
     return null;
   }
+  const perScopeCap = parseOptionalPercent(scope.perScopeCap);
+  if (perScopeCap === undefined) {
+    return null;
+  }
   const tiers: { atOrAbove: number; credit: number }[] = [];
   for (const tier of scope.tiers) {
     const atOrAbove = parsePercent(tier.atOrAbove);
@@ -461,5 +486,5 @@ function penaltyFromForm(scope: ContractFormScope): ContractPenalty | null {
     }
     tiers.push({ atOrAbove, credit });
   }
-  return { kind: "tiers", tiers, perScopeCap: scope.perScopeCap };
+  return { kind: "tiers", tiers, perScopeCap };
 }

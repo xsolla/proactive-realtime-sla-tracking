@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 const tones = {
-  neutral: "border-border bg-secondary text-foreground",
-  warning: "border-warning bg-secondary text-warning",
-  danger: "border-danger bg-secondary text-danger",
+  neutral: "border-border bg-muted text-foreground",
+  warning: "border-warning bg-warning text-warning-foreground",
+  danger: "border-danger bg-danger text-destructive-foreground",
 } as const;
 
 export function Chip({
@@ -15,7 +15,7 @@ export function Chip({
 }) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded border px-2 py-1 text-xs font-medium ${tones[tone]}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium ${tones[tone]}`}
     >
       {children}
     </span>

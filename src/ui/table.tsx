@@ -18,11 +18,11 @@ export function Table({
   if (!framed) {
     return table;
   }
-  return <div className="overflow-x-auto rounded border border-border">{table}</div>;
+  return <div className="overflow-x-auto rounded-card border border-border bg-card text-card-foreground">{table}</div>;
 }
 
 export function TableHead({ children }: { children: ReactNode }) {
-  return <thead className="bg-card">{children}</thead>;
+  return <thead className="bg-muted/40">{children}</thead>;
 }
 
 export function TableBody({ children }: { children: ReactNode }) {
@@ -39,7 +39,7 @@ export function TableRow({
   onClick?: () => void;
 }) {
   return (
-    <tr className={`border-b border-border last:border-b-0 ${className}`} onClick={onClick}>
+    <tr className={`border-b border-border transition-colors duration-150 last:border-b-0 hover:bg-accent ${className}`} onClick={onClick}>
       {children}
     </tr>
   );
@@ -73,7 +73,7 @@ export function TableHeaderCell({
   return (
     <th
       scope="col"
-      className={`px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground ${numeric ? "text-right" : "text-left"}`}
+      className={`px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground ${numeric ? "text-right font-mono tabular-nums" : "text-left"}`}
     >
       {children}
     </th>

@@ -42,7 +42,8 @@ describe("alerts page", () => {
     const view = buildAlertsView({ alerts: rows, filterKey: "2026-09", months, partners });
     const html = renderToStaticMarkup(<AlertsPage view={view} />);
     const span = (label: string) => html.match(new RegExp(`<span class="[^"]*">${label}</span>`))?.[0] ?? "";
-    expect(span("Breached")).toContain("text-danger");
+    expect(span("Breached")).toContain("bg-danger");
+    expect(span("Breached")).toContain("text-destructive-foreground");
     const headsUp = span("Heads-up");
     expect(headsUp).not.toBe("");
     expect(headsUp).not.toContain("text-danger");
@@ -52,7 +53,7 @@ describe("alerts page", () => {
     expect(meeting).not.toContain("text-danger");
     expect(meeting).not.toContain("text-warning");
     const august = buildAlertsView({ alerts: rows, filterKey: "2026-08", months, partners });
-    expect(renderToStaticMarkup(<AlertsPage view={august} />)).toMatch(/<span class="[^"]*text-warning[^"]*">At risk<\/span>/);
+    expect(renderToStaticMarkup(<AlertsPage view={august} />)).toMatch(/<span class="[^"]*bg-warning[^"]*text-warning-foreground[^"]*">At risk<\/span>/);
   });
 
   it("marks only the selected filter link with aria-current", () => {

@@ -27,11 +27,11 @@ export function TermsView({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Contract terms</p>
-          <h1 className="text-2xl font-semibold tracking-tight">{partnerName}</h1>
+          <h1 className="font-heading text-2xl font-bold leading-tight md:text-3xl">{partnerName}</h1>
         </div>
         <a
           href={`/partners/${partner}/terms?edit=1`}
-          className="inline-flex items-center justify-center rounded border border-border bg-secondary px-3 py-2 text-sm font-medium text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+          className="inline-flex min-h-11 items-center justify-center rounded-button border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Edit
         </a>
@@ -71,8 +71,8 @@ function lifecycleLabel(lifecycle: string): string {
 
 function ScopeReadout({ index, scope }: { index: number; scope: ContractScope }) {
   return (
-    <section className="flex flex-col gap-4 rounded border border-border p-4">
-      <h2 className="text-lg font-semibold tracking-tight">Scope {index + 1}</h2>
+    <section className="flex flex-col gap-4 rounded-card border border-border bg-card p-4 text-card-foreground md:p-6">
+      <h2 className="font-heading text-lg font-semibold leading-tight md:text-xl">Scope {index + 1}</h2>
       <dl className="grid gap-4">
         <div className="flex flex-col gap-1">
           <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Coverage</dt>

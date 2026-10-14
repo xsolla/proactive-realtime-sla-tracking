@@ -106,6 +106,22 @@ describe("term table expander", () => {
     expect(html).toMatch(/class="[^"]*border-success[^"]*text-success[^"]*">Meeting</);
   });
 
+  it("labels the budget column Consumption meter, with the consumed figure and no max caption", () => {
+    const html = renderToStaticMarkup(<TermTable partnerName="Scopely" terms={termsFor([boundaryOutage], 30)} />);
+    expect(html).toContain(">Consumption meter<");
+    expect(html).not.toContain("Error budget");
+    expect(html).toContain("138.9% consumed");
+    expect(html).not.toContain("max 100%");
+  });
+
+  it("has no credit column; credit lives on the coverage cards", () => {
+    const terms = termsFor([boundaryOutage], 30);
+    const html = renderToStaticMarkup(<TermTable partnerName="Scopely" terms={terms} />);
+    expect(html).toContain(">Projected<");
+    expect(html).not.toContain(">Credit<");
+    expect(html).not.toContain(terms[0]?.credit.text ?? "");
+  });
+
   it("renders the PIR key as a link only for an https ticket URL, and the severity without an em dash", () => {
     const linked = termsFor([boundaryOutage], 30)[0]?.outages ?? [];
     expect(linked[0]?.severity).toBe("L1 · Critical");

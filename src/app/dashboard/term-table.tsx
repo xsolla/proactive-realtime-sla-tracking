@@ -5,8 +5,8 @@ import { OutageLines } from "./outage-lines";
 import { WindowTrend } from "./trend-sparkline";
 import type { TermView } from "./view";
 
-const COLUMNS = 6;
-const GRID = "grid-cols-[minmax(8rem,1.4fr)_7rem_9.5rem_9rem_7.5rem_10rem]";
+const COLUMNS = 5;
+const GRID = "grid-cols-5";
 
 function Facts({ term }: { term: TermView }) {
   const actualTone = term.status === "meeting" ? "text-foreground" : term.status === "at_risk" ? "text-warning" : "text-danger";
@@ -17,29 +17,31 @@ function Facts({ term }: { term: TermView }) {
         <span className="block font-mono text-xs text-muted-foreground">{term.downLine}</span>
       </span>
       <span><StatusBadge variant={badgeVariant[term.status]} label={statusLabel(term.status)} /></span>
-      <span className="text-right font-mono text-sm tabular-nums">
+      <span className="font-mono text-sm tabular-nums">
         {term.target} / <span className={actualTone}>{term.actual}</span>
         {term.actualCaption === null ? null : <span className="block text-xs text-muted-foreground">{term.actualCaption}</span>}
       </span>
-      <span>
+      <span className="-translate-x-2">
         <BudgetBar usedMinutes={term.usedMinutes} allowedMinutes={term.allowedMinutes} tone={budgetTone[term.status]} />
-        <span className="mt-1 flex justify-between font-mono text-xs text-muted-foreground"><span>{term.consumedPercent}</span><span>max 100%</span></span>
+        <span className="mt-1 block text-center font-mono text-sm text-muted-foreground">{term.consumedPercent}</span>
       </span>
-      <span className="text-right font-mono text-sm tabular-nums text-foreground">{term.exhaustion}</span>
-      <span className="text-right font-mono text-sm tabular-nums text-foreground">{term.credit.text}</span>
+      <span className="font-mono text-sm tabular-nums text-foreground">{term.exhaustion}</span>
     </div>
   );
 }
 
 export function TermTable({ partnerName, terms }: { partnerName: string; terms: readonly TermView[] }) {
   return (
-    <div className="min-w-0 overflow-x-auto rounded border border-border">
+    <div className="min-w-0 overflow-x-auto rounded-card border border-border bg-card text-card-foreground">
       <Table framed={false} caption={`SLA term evaluations for ${partnerName}`}>
         <TableHead>
           <tr className="border-b border-border">
             <th colSpan={COLUMNS} className="p-0 text-left font-normal">
-              <div className={`grid ${GRID} gap-x-3 px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground`}>
-                <span>Service</span><span>Status</span><span className="text-right">Target / Actual</span><span>Error budget</span><span className="text-right">Projected</span><span className="text-right">Credit</span>
+              <div className="flex items-center">
+                <span aria-hidden="true" className="w-10 shrink-0" />
+                <div className={`grid min-w-0 flex-1 ${GRID} gap-x-3 px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground`}>
+                  <span>Service</span><span>Status</span><span>Target / Actual</span><span className="-translate-x-2">Consumption meter</span><span>Projected</span>
+                </div>
               </div>
             </th>
           </tr>
@@ -52,7 +54,7 @@ export function TermTable({ partnerName, terms }: { partnerName: string; terms: 
               <tr key={term.key} className="border-b border-border last:border-b-0">
                 <td colSpan={COLUMNS} className="p-0">
                   <details data-outages={outages === null ? undefined : ""} data-disclosure="" className="group">
-                    <summary aria-expanded={false} aria-controls={panelId} aria-label={`Show ${outages === null ? "trend" : "outages"} for ${partnerName}, ${term.title}`} className="disclosure flex cursor-pointer list-none items-center">
+                    <summary aria-expanded={false} aria-controls={panelId} aria-label={`Show ${outages === null ? "trend" : "outages"} for ${partnerName}, ${term.title}`} className="disclosure flex cursor-pointer list-none items-center transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
                       <span className="px-3 text-foreground group-open:[&_svg]:rotate-90"><Caret direction="right" /></span>
                       <div className="min-w-0 flex-1"><Facts term={term} /></div>
                     </summary>

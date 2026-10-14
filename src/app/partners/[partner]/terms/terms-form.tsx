@@ -38,6 +38,7 @@ export function TermsForm({
   const [form, setForm] = useState(initial);
   const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [attemptedAction, setAttemptedAction] = useState<"draft" | "activate" | null>(null);
   const [serverErrors, setServerErrors] = useState<FieldIssue[]>([]);
   const [conflict, setConflict] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -83,6 +84,7 @@ export function TermsForm({
 
   async function save(lifecycle: "terms_pending_review" | "contract_bound") {
     setSubmitAttempted(true);
+    setAttemptedAction(lifecycle === "terms_pending_review" ? "draft" : "activate");
     setConfirming(false);
     if (review.errors.length > 0) {
       return;
@@ -128,6 +130,7 @@ export function TermsForm({
 
   function requestActivate() {
     setSubmitAttempted(true);
+    setAttemptedAction("activate");
     if (review.errors.length > 0) {
       return;
     }
@@ -144,14 +147,14 @@ export function TermsForm({
     >
       <div className="flex flex-col gap-1">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Contract terms</p>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="font-heading text-2xl font-bold leading-tight md:text-3xl">
           {form.expectedVersion === null ? "Add contract terms" : "Edit contract terms"}
         </h1>
         <p className="text-sm text-muted-foreground">{partnerName}</p>
       </div>
 
       {conflict ? (
-        <div className="flex flex-col items-start gap-3 rounded border border-border bg-muted p-4" role="alert">
+        <div className="flex flex-col items-start gap-3 rounded-card border border-border bg-muted p-4" role="alert">
           <p className="text-sm text-foreground">Someone else changed these terms.</p>
           <Button type="button" onClick={() => onReload?.()}>
             Reload
@@ -187,7 +190,7 @@ export function TermsForm({
             }}
           />
         </Field>
-        <Field label="Effective to" htmlFor="effective-to" field="effectiveTo" error={message("effectiveTo")}>
+        <Field label="Effective to (Optional)" htmlFor="effective-to" field="effectiveTo" error={message("effectiveTo")}>
           <TextInput
             id="effective-to"
             type="date"
@@ -200,7 +203,6 @@ export function TermsForm({
           />
         </Field>
       </div>
-      <p className="text-sm text-muted-foreground">Effective to is optional.</p>
       {message("scopes") ? (
         <p className="text-sm text-danger" role="alert">
           {message("scopes")}
@@ -224,6 +226,34 @@ export function TermsForm({
           }}
         />
       ))}
+
+      <div className="grid gap-4 rounded-card border border-border bg-card p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:p-6">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">Contract aggregate credit cap</p>
+          <p className="text-sm text-muted-foreground">
+            Optional. Leave blank when the contract states no cap across scopes.
+          </p>
+        </div>
+        <div className="w-full md:w-56">
+          <Field
+            label="Cap %"
+            htmlFor="aggregate-cap"
+            field="contractAggregateCap"
+            error={message("contractAggregateCap")}
+          >
+            <TextInput
+              id="aggregate-cap"
+              inputMode="decimal"
+              value={form.contractAggregateCap}
+              {...described("aggregate-cap", message("contractAggregateCap"))}
+              onChange={(event) => {
+                const value = event.target.value;
+                edit(["contractAggregateCap"], (current) => ({ ...current, contractAggregateCap: value }));
+              }}
+            />
+          </Field>
+        </div>
+      </div>
 
       <div>
         <Button
@@ -254,8 +284,15 @@ export function TermsForm({
       </Field>
       <p className="text-sm text-muted-foreground">Your name is recorded with this save.</p>
 
+      {submitAttempted && review.errors.length > 0 ? (
+        <p className="text-sm text-danger" role="alert" data-save-errors>
+          {attemptedAction === "activate" ? "Terms were not activated." : "Draft was not saved."} Complete or
+          correct the {review.errors.length} required {review.errors.length === 1 ? "field" : "fields"} above.
+        </p>
+      ) : null}
+
       {confirming ? (
-        <div className="flex flex-col items-start gap-4 rounded border border-border p-4">
+        <div className="flex flex-col items-start gap-4 rounded-card border border-border bg-card p-4 md:p-6">
           <p className="text-sm text-foreground">
             Activate contract terms for {partnerName}? This starts scoring.
           </p>
@@ -292,6 +329,19 @@ function described(id: string, error?: string, warning?: string) {
   return {};
 }
 
+function ChoiceMark({ selected }: { selected: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-flex size-4 shrink-0 items-center justify-center rounded-full border ${
+        selected ? "border-primary" : "border-muted-foreground"
+      }`}
+    >
+      {selected ? <span className="size-2 rounded-full bg-primary" /> : null}
+    </span>
+  );
+}
+
 function ScopeFields({
   index,
   scope,
@@ -309,13 +359,18 @@ function ScopeFields({
   onPatch: (fields: string[], patch: Partial<ContractFormScope>) => void;
   onRemove: () => void;
 }) {
+  const [serviceQuery, setServiceQuery] = useState("");
   const field = (suffix: string) => `scopes.${scope.scopeId}.${suffix}`;
   const targetId = `target-${scope.scopeId}`;
   const sourceId = `source-${scope.scopeId}`;
+  const serviceSearchId = `service-search-${scope.scopeId}`;
+  const visibleServices = serviceOptions.filter((service) =>
+    service.displayName.toLocaleLowerCase().includes(serviceQuery.trim().toLocaleLowerCase()),
+  );
   return (
-    <section className="flex flex-col gap-4 rounded border border-border p-4">
+    <section className="flex flex-col gap-4 rounded-card border border-border bg-card p-4 text-card-foreground md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">Scope {index + 1}</h2>
+        <h2 className="font-heading text-lg font-semibold leading-tight md:text-xl">Scope {index + 1}</h2>
         {canRemove ? (
           <Button type="button" onClick={onRemove}>
             Remove scope
@@ -323,26 +378,34 @@ function ScopeFields({
         ) : null}
       </div>
 
-      <fieldset className="flex flex-col gap-2" data-field={field("kind")}>
+      <fieldset className="flex flex-col gap-3" data-field={field("kind")}>
         <legend className="text-sm font-medium text-foreground">Coverage</legend>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="radio"
-            name={`kind-${scope.scopeId}`}
-            checked={scope.kind === "service"}
-            onChange={() => onPatch([field("kind")], { kind: "service" })}
-          />
-          Specific services
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="radio"
-            name={`kind-${scope.scopeId}`}
-            checked={scope.kind === "catch_all"}
-            onChange={() => onPatch([field("kind")], { kind: "catch_all" })}
-          />
-          General
-        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={scope.kind === "service"}
+            onClick={() => onPatch([field("kind")], { kind: "service" })}
+            className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-input border p-3 text-sm transition-colors duration-150 ${
+              scope.kind === "service" ? "border-primary bg-accent" : "border-input bg-background hover:bg-accent"
+            }`}
+          >
+            <ChoiceMark selected={scope.kind === "service"} />
+            Specific services
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={scope.kind === "catch_all"}
+            onClick={() => onPatch([field("kind")], { kind: "catch_all" })}
+            className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-input border p-3 text-sm transition-colors duration-150 ${
+              scope.kind === "catch_all" ? "border-primary bg-accent" : "border-input bg-background hover:bg-accent"
+            }`}
+          >
+            <ChoiceMark selected={scope.kind === "catch_all"} />
+            General
+          </button>
+        </div>
         {message(field("kind")) ? (
           <p className="text-sm text-danger" role="alert">
             {message(field("kind"))}
@@ -351,12 +414,33 @@ function ScopeFields({
       </fieldset>
 
       {scope.kind === "service" ? (
-        <fieldset className="flex flex-col gap-2" data-field={field("services")}>
-          <legend className="text-sm font-medium text-foreground">Services</legend>
-          <p className="text-sm text-muted-foreground">Selected services share one target.</p>
-          <div className="flex max-h-60 flex-col gap-2 overflow-y-auto rounded border border-border p-3">
-            {serviceOptions.map((service) => (
-              <label key={service.id} className="flex items-center gap-2 text-sm">
+        <fieldset className="flex flex-col gap-3 rounded-input border border-border bg-background p-4" data-field={field("services")}>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <legend className="text-sm font-medium text-foreground">Choose services</legend>
+            <span className="font-mono text-xs text-muted-foreground">
+              {scope.services.length} {scope.services.length === 1 ? "service" : "services"} selected
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">Selected services share this scope&apos;s target and tiers.</p>
+          <label htmlFor={serviceSearchId} className="text-sm font-medium text-foreground">
+            Find services
+          </label>
+          <TextInput
+            id={serviceSearchId}
+            type="search"
+            value={serviceQuery}
+            onChange={(event) => setServiceQuery(event.target.value)}
+          />
+          <div className="grid max-h-64 gap-2 overflow-y-auto sm:grid-cols-2">
+            {visibleServices.map((service) => (
+              <label
+                key={service.id}
+                className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-input border px-3 py-2 text-sm transition-colors duration-150 ${
+                  scope.services.includes(service.id)
+                    ? "border-primary bg-accent"
+                    : "border-input bg-card hover:bg-accent"
+                }`}
+              >
                 <input
                   type="checkbox"
                   checked={scope.services.includes(service.id)}
@@ -370,6 +454,9 @@ function ScopeFields({
                 {service.displayName}
               </label>
             ))}
+            {visibleServices.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No registry services match this search.</p>
+            ) : null}
           </div>
           {message(field("services")) ? (
             <p className="text-sm text-danger" role="alert">
@@ -420,35 +507,31 @@ function ScopeFields({
         />
       </Field>
 
-      <fieldset className="flex flex-col gap-2" data-field={field("penalty")}>
+      <fieldset className="flex flex-col gap-3" data-field={field("penalty")}>
         <legend className="text-sm font-medium text-foreground">Penalty</legend>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="radio"
-            name={`penalty-${scope.scopeId}`}
-            checked={scope.penaltyKind === "none"}
-            onChange={() => onPatch([field("penalty")], { penaltyKind: "none" })}
-          />
-          No penalty clause
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="radio"
-            name={`penalty-${scope.scopeId}`}
-            checked={scope.penaltyKind === "not_entered"}
-            onChange={() => onPatch([field("penalty")], { penaltyKind: "not_entered" })}
-          />
-          Penalty exists, not entered
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="radio"
-            name={`penalty-${scope.scopeId}`}
-            checked={scope.penaltyKind === "tiers"}
-            onChange={() => onPatch([field("penalty")], { penaltyKind: "tiers" })}
-          />
-          Tiers
-        </label>
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            { value: "none" as const, label: "No penalty clause" },
+            { value: "not_entered" as const, label: "Penalty exists, not entered" },
+            { value: "tiers" as const, label: "Enter penalty tiers" },
+          ].map((option) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked={scope.penaltyKind === option.value}
+              onClick={() => onPatch([field("penalty")], { penaltyKind: option.value })}
+              key={option.value}
+              className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-input border p-3 text-sm transition-colors duration-150 ${
+                scope.penaltyKind === option.value
+                  ? "border-primary bg-accent"
+                  : "border-input bg-background hover:bg-accent"
+              }`}
+            >
+              <ChoiceMark selected={scope.penaltyKind === option.value} />
+              {option.label}
+            </button>
+          ))}
+        </div>
         {message(field("penalty")) ? (
           <p className="text-sm text-danger" role="alert">
             {message(field("penalty"))}
@@ -457,14 +540,20 @@ function ScopeFields({
       </fieldset>
 
       {scope.penaltyKind === "tiers" ? (
-        <div className="flex flex-col gap-3" data-field={field("tiers")}>
-          <p className="text-sm text-muted-foreground">Highest band first. The last band stays at 0%.</p>
+        <div className="flex flex-col gap-4 rounded-input border border-border bg-background p-4" data-field={field("tiers")}>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-medium text-foreground">Availability bands</h3>
+            <p className="text-sm text-muted-foreground">
+              Enter bands from highest to lowest. The final fallback covers availability below the lowest threshold.
+            </p>
+          </div>
           {scope.tiers.map((tier, tierIndex) => (
             <TierRow
               key={`${scope.scopeId}-${tierIndex}`}
               scopeId={scope.scopeId}
               index={tierIndex}
               tier={tier}
+              previousAtOrAbove={scope.tiers[tierIndex - 1]?.atOrAbove}
               atOrAboveError={message(`${field("tiers")}.${tierIndex}.atOrAbove`)}
               creditError={message(`${field("tiers")}.${tierIndex}.credit`)}
               onChange={(patch) => {
@@ -488,7 +577,7 @@ function ScopeFields({
               {message(field("tiers"))}
             </p>
           ) : null}
-          <div>
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <Button
               type="button"
               onClick={() => {
@@ -500,7 +589,28 @@ function ScopeFields({
             >
               Add band
             </Button>
+            <div className="w-full sm:w-56">
+              <Field
+                label="Scope credit cap %"
+                htmlFor={`cap-${scope.scopeId}`}
+                field={field("perScopeCap")}
+                error={message(field("perScopeCap"))}
+              >
+                <TextInput
+                  id={`cap-${scope.scopeId}`}
+                  inputMode="decimal"
+                  value={scope.perScopeCap}
+                  {...described(`cap-${scope.scopeId}`, message(field("perScopeCap")))}
+                  onChange={(event) =>
+                    onPatch([field("perScopeCap")], { perScopeCap: event.target.value })
+                  }
+                />
+              </Field>
+            </div>
           </div>
+          <p className="text-sm text-muted-foreground">
+            Leave the scope cap blank only when the contract states no per-scope cap.
+          </p>
         </div>
       ) : null}
 
@@ -509,6 +619,7 @@ function ScopeFields({
         htmlFor={sourceId}
         field={field("sourceClause")}
         warning={warning(field("sourceClause"))}
+        help="Enter the contract section or clause reference that supports this scope’s coverage, target, and penalty figures."
       >
         <TextArea
           id={sourceId}
@@ -526,6 +637,7 @@ function TierRow({
   scopeId,
   index,
   tier,
+  previousAtOrAbove,
   atOrAboveError,
   creditError,
   onChange,
@@ -534,6 +646,7 @@ function TierRow({
   scopeId: string;
   index: number;
   tier: ContractFormTier;
+  previousAtOrAbove?: string;
   atOrAboveError?: string;
   creditError?: string;
   onChange: (patch: Partial<ContractFormTier>) => void;
@@ -541,43 +654,56 @@ function TierRow({
 }) {
   const atId = `at-${scopeId}-${index}`;
   const creditId = `credit-${scopeId}-${index}`;
+  const band =
+    tier.fixed && previousAtOrAbove
+      ? `Below ${previousAtOrAbove}%`
+      : index === 0 && tier.atOrAbove
+        ? `${tier.atOrAbove}% and above`
+        : tier.atOrAbove && previousAtOrAbove
+          ? `${tier.atOrAbove}% to below ${previousAtOrAbove}%`
+          : tier.fixed
+            ? "Fallback band"
+            : "Set this band’s threshold";
   return (
-    <div className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
-      <Field
-        label="At or above %"
-        htmlFor={atId}
-        field={`${scopeId}-tier-${index}-at`}
-        error={atOrAboveError}
-      >
-        <TextInput
-          id={atId}
-          inputMode="decimal"
-          readOnly={tier.fixed}
-          value={tier.atOrAbove}
-          {...described(atId, atOrAboveError)}
-          onChange={(event) => {
-            if (!tier.fixed) {
-              onChange({ atOrAbove: event.target.value });
-            }
-          }}
-        />
-      </Field>
-      <Field label="Credit %" htmlFor={creditId} field={`${scopeId}-tier-${index}-credit`} error={creditError}>
-        <TextInput
-          id={creditId}
-          inputMode="decimal"
-          value={tier.credit}
-          {...described(creditId, creditError)}
-          onChange={(event) => onChange({ credit: event.target.value })}
-        />
-      </Field>
-      {tier.fixed ? (
-        <span className="pb-2 text-sm text-muted-foreground">Fixed at 0%</span>
-      ) : (
-        <Button type="button" onClick={onRemove}>
-          Remove band
-        </Button>
-      )}
+    <div className="flex flex-col gap-3 rounded-input border border-input bg-card p-3">
+      <p className="font-mono text-sm tabular-nums text-foreground">{band}</p>
+      <div className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
+        <Field
+          label={tier.fixed ? "Fallback threshold %" : "At or above %"}
+          htmlFor={atId}
+          field={`${scopeId}-tier-${index}-at`}
+          error={atOrAboveError}
+        >
+          <TextInput
+            id={atId}
+            inputMode="decimal"
+            readOnly={tier.fixed}
+            value={tier.atOrAbove}
+            {...described(atId, atOrAboveError)}
+            onChange={(event) => {
+              if (!tier.fixed) {
+                onChange({ atOrAbove: event.target.value });
+              }
+            }}
+          />
+        </Field>
+        <Field label="Credit %" htmlFor={creditId} field={`${scopeId}-tier-${index}-credit`} error={creditError}>
+          <TextInput
+            id={creditId}
+            inputMode="decimal"
+            value={tier.credit}
+            {...described(creditId, creditError)}
+            onChange={(event) => onChange({ credit: event.target.value })}
+          />
+        </Field>
+        {tier.fixed ? (
+          <span className="pb-2 text-sm text-muted-foreground">Threshold fixed at 0%</span>
+        ) : (
+          <Button type="button" onClick={onRemove}>
+            Remove band
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

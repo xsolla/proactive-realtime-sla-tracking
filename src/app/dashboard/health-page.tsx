@@ -8,7 +8,7 @@ export function HealthPage({ health, unusable }: { health: HealthView | { status
   if ("status" in health) {
     return (
       <>
-        <h1 className="text-2xl font-semibold tracking-tight">Health</h1>
+        <h1 className="font-heading text-2xl font-bold leading-tight md:text-3xl">Health</h1>
         <p role="alert" className="text-sm text-danger">{HEALTH_UNAVAILABLE}</p>
       </>
     );
@@ -16,7 +16,7 @@ export function HealthPage({ health, unusable }: { health: HealthView | { status
   const ingestion = health.ingestion;
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Health</h1>
+      <h1 className="font-heading text-2xl font-bold leading-tight md:text-3xl">Health</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tile label="Dropped rows" value={String(health.droppedRows)} detail={`of ${health.usableCount + health.droppedRows} rows in the extract`} tone={health.droppedRows > 0 ? "warning" : "neutral"} />
         <Tile label="Unresolved partners" value={String(health.unresolvedPartnerNames.length)} tone={health.unresolvedPartnerNames.length > 0 ? "warning" : "neutral"} />
@@ -40,7 +40,7 @@ export function HealthPage({ health, unusable }: { health: HealthView | { status
         </ul>
       ) : null}
       <section aria-labelledby="unusable-rows-heading" className="flex flex-col gap-2">
-        <h2 id="unusable-rows-heading" className="text-lg font-semibold tracking-tight">Unusable rows</h2>
+        <h2 id="unusable-rows-heading" className="font-heading text-lg font-semibold leading-tight md:text-xl">Unusable rows</h2>
         {unusable === null ? (
           <p role="alert" className="text-sm text-danger">{UNUSABLE_ROWS_UNAVAILABLE}</p>
         ) : unusable.length === 0 ? (
@@ -134,7 +134,7 @@ function IngestionList({ label, rows }: { label: string; rows: readonly Ingestio
               {row.href === null ? (
                 <span className="font-mono">{row.pirKey}</span>
               ) : (
-                <a href={row.href} target="_blank" rel="noopener noreferrer" className="font-mono text-primary underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">{row.pirKey}</a>
+                <a href={row.href} target="_blank" rel="noopener noreferrer" className="font-mono text-link underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{row.pirKey}</a>
               )}
               {row.detail ? <span className="text-muted-foreground"> · {row.detail}</span> : null}
             </li>

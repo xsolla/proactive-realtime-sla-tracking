@@ -15,7 +15,7 @@ export function OutageLines({
       {groups.map((group) => {
         const merged = group.outages.length > 1;
         return (
-          <div key={group.id} className="rounded border border-border bg-background">
+          <div key={group.id} className="rounded-card border border-border bg-background">
             <ul className="flex flex-col">
               {group.outages.map((outage) => (
                 <li
@@ -107,7 +107,7 @@ function PirKey({ outage }: { outage: OutageView }) {
         href={outage.href}
         target="_blank"
         rel="noopener noreferrer"
-        className="font-mono text-primary underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+        className="font-mono text-link underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {outage.pirKey}
       </a>

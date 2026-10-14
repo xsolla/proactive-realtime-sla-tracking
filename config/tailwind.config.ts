@@ -24,22 +24,42 @@ const config: Config = {
       border: "var(--border)",
       input: "var(--input)",
       card: "var(--card)",
+      "card-foreground": "var(--card-foreground)",
       sidebar: "var(--sidebar)",
+      popover: "var(--popover)",
+      "popover-foreground": "var(--popover-foreground)",
       primary: {
         DEFAULT: "var(--primary)",
         foreground: "var(--primary-foreground)",
       },
       ring: "var(--ring)",
-      secondary: "var(--secondary)",
+      secondary: {
+        DEFAULT: "var(--secondary)",
+        foreground: "var(--secondary-foreground)",
+      },
       muted: {
         DEFAULT: "var(--muted)",
         foreground: "var(--muted-foreground)",
       },
-      accent: "var(--accent)",
-      destructive: "var(--destructive)",
+      accent: {
+        DEFAULT: "var(--accent)",
+        foreground: "var(--accent-foreground)",
+      },
+      destructive: {
+        DEFAULT: "var(--destructive)",
+        foreground: "var(--destructive-foreground)",
+      },
       danger: "var(--danger)",
-      warning: "var(--warning)",
-      success: "var(--success)",
+      warning: {
+        DEFAULT: "var(--warning)",
+        foreground: "var(--warning-foreground)",
+      },
+      success: {
+        DEFAULT: "var(--success)",
+        foreground: "var(--success-foreground)",
+      },
+      "brand-text": "var(--brand-text)",
+      link: "var(--link)",
       chart: {
         1: "var(--chart-1)",
         2: "var(--chart-2)",
@@ -52,10 +72,15 @@ const config: Config = {
     borderRadius: {
       none: "0",
       DEFAULT: "var(--radius)",
+      button: "var(--radius-button)",
+      input: "var(--radius-input)",
+      card: "var(--radius-card)",
       full: "9999px",
     },
     fontFamily: {
       sans: "var(--font-sans)",
+      heading: "var(--font-heading)",
+      "heading-wide": "var(--font-heading-wide)",
       mono: "var(--font-mono)",
     },
   },
