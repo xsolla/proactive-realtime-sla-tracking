@@ -24,9 +24,9 @@ export function AttentionTable({ rows, failure }: { rows: readonly AttentionRow[
       </TableHead>
       <TableBody>
         {rows.map((row) => (
-          <tr key={row.term.key} className="border-b border-border last:border-b-0">
+          <tr key={row.term.key} className="border-b border-border transition-colors duration-150 last:border-b-0 hover:bg-accent">
             <td className="px-3 py-3 align-top">
-              <a href={row.href} className="text-sm font-medium text-foreground hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">{row.partnerName}</a>
+              <a href={row.href} className="text-sm font-medium text-link underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{row.partnerName}</a>
               <p className="text-xs text-muted-foreground">{row.term.title}</p>
             </td>
             <td className="px-3 py-3 align-top"><StatusBadge variant={badgeVariant[row.term.status]} label={statusLabel(row.term.status)} /></td>

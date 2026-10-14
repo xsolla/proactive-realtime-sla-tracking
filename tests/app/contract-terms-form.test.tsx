@@ -9,7 +9,7 @@ function readyForm(expectedVersion: number | null = null): ContractFormState {
   return {
     effectiveFrom: "2026-01-01",
     effectiveTo: "",
-    contractAggregateCap: null,
+    contractAggregateCap: "",
     scopes: [
       {
         scopeId: "payments",
@@ -19,7 +19,7 @@ function readyForm(expectedVersion: number | null = null): ContractFormState {
         target: "97.25",
         penaltyKind: "none",
         tiers: [{ atOrAbove: "0", credit: "", fixed: true }],
-        perScopeCap: null,
+        perScopeCap: "",
         sourceClause: "FIXTURE clause alpha",
       },
     ],
@@ -69,6 +69,14 @@ describe("contract terms form", () => {
     expect(field?.querySelector("[role='alert']")).not.toBeNull();
   });
 
+  it("marks the effective-to field as optional in its label", async () => {
+    const container = await mount(emptyContractForm());
+    const label = container.querySelector('label[for="effective-to"]');
+
+    expect(label?.textContent).toBe("Effective to (Optional)");
+    expect(container.textContent).not.toContain("Effective to is optional.");
+  });
+
   it("warns on an empty source clause and still allows a draft save", async () => {
     const form = readyForm();
     const scope = form.scopes[0];
@@ -85,6 +93,17 @@ describe("contract terms form", () => {
 
     await clickButton(container, "Save draft");
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("explains what belongs in the source clause field", async () => {
+    const container = await mount(readyForm());
+    const field = container.querySelector('[data-field="scopes.payments.sourceClause"]');
+    const tooltip = field?.querySelector('[role="tooltip"]');
+
+    expect(field?.textContent).toContain("Source clause?");
+    expect(tooltip?.textContent).toContain(
+      "Enter the contract section or clause reference that supports this scope’s coverage, target, and penalty figures.",
+    );
   });
 
   it("names the partner before activation, and sends contract_bound only after confirmation", async () => {
@@ -114,6 +133,103 @@ describe("contract terms form", () => {
 
     await clickButton(container, "Reload");
     expect(onReload).toHaveBeenCalledOnce();
+  });
+
+  it("reveals a searchable registry service picker and reports the selection", async () => {
+    const form = readyForm();
+    const scope = form.scopes[0];
+    if (scope === undefined) {
+      throw new Error("expected a scope");
+    }
+    form.scopes = [{ ...scope, kind: "", services: [] }];
+    const container = await mount(form);
+
+    await clickButton(container, "Specific services");
+    const search = container.querySelector("#service-search-payments");
+    expect(search).toBeInstanceOf(HTMLInputElement);
+    await typeInto(search as HTMLInputElement, "Payments");
+
+    expect(container.textContent).toContain("Payments");
+    expect(container.textContent).not.toContain("ChatPlatform");
+    expect(container.textContent).toContain("0 services selected");
+
+    await clickLabel(container, "Payments");
+    expect(container.textContent).toContain("1 service selected");
+  });
+
+  it("reveals tier entry from the penalty choice", async () => {
+    const container = await mount(readyForm());
+
+    await clickButton(container, "Enter penalty tiers");
+
+    expect(container.textContent).toContain("Availability bands");
+    expect(container.textContent).toContain("Add band");
+  });
+
+  it("reports beside the actions when required fields prevent a draft save", async () => {
+    const container = await mount(emptyContractForm());
+
+    await clickButton(container, "Save draft");
+
+    const summary = container.querySelector('[data-save-errors][role="alert"]');
+    expect(summary?.textContent).toMatch(/draft was not saved/i);
+    expect(summary?.textContent).toMatch(/required fields above/i);
+  });
+
+  it("shows penalty thresholds as complete availability bands", async () => {
+    const form = readyForm();
+    const scope = form.scopes[0];
+    if (scope === undefined) {
+      throw new Error("expected a scope");
+    }
+    form.scopes = [
+      {
+        ...scope,
+        penaltyKind: "tiers",
+        tiers: [
+          { atOrAbove: "99.9", credit: "0", fixed: false },
+          { atOrAbove: "98.8", credit: "6.67", fixed: false },
+          { atOrAbove: "98.4", credit: "13.33", fixed: false },
+          { atOrAbove: "0", credit: "13.33", fixed: true },
+        ],
+      },
+    ];
+    const container = await mount(form);
+
+    expect(container.textContent).toContain("99.9% and above");
+    expect(container.textContent).toContain("98.8% to below 99.9%");
+    expect(container.textContent).toContain("98.4% to below 98.8%");
+    expect(container.textContent).toContain("Below 98.4%");
+  });
+
+  it("saves optional scope and contract credit caps", async () => {
+    const form = readyForm();
+    const scope = form.scopes[0];
+    if (scope === undefined) {
+      throw new Error("expected a scope");
+    }
+    form.scopes = [
+      {
+        ...scope,
+        penaltyKind: "tiers",
+        tiers: [
+          { atOrAbove: "99.9", credit: "0", fixed: false },
+          { atOrAbove: "0", credit: "13.33", fixed: true },
+        ],
+      },
+    ];
+    const fetchMock = mockFetch(() => jsonResponse({ kind: "saved", version: 1 }, 200));
+    const container = await mount(form);
+
+    await typeInto(container.querySelector("#cap-payments") as HTMLInputElement, "13.33");
+    await typeInto(container.querySelector("#aggregate-cap") as HTMLInputElement, "20");
+    await clickButton(container, "Save draft");
+
+    const body = sentBody(fetchMock) as {
+      terms: { contractAggregateCap: number; scopes: { penalty: { perScopeCap: number } }[] };
+    };
+    expect(body.terms.contractAggregateCap).toBe(20);
+    expect(body.terms.scopes[0]?.penalty.perScopeCap).toBe(13.33);
   });
 });
 
@@ -152,5 +268,15 @@ async function clickButton(container: ParentNode, text: string) {
   }
   await act(async () => {
     button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+}
+
+async function clickLabel(container: ParentNode, text: string) {
+  const label = [...container.querySelectorAll("label")].find((node) => node.textContent?.trim() === text);
+  if (label === undefined) {
+    throw new Error(`No label named ${text}`);
+  }
+  await act(async () => {
+    label.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
 }

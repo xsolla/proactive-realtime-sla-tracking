@@ -16,7 +16,7 @@ export function CoverageCards({ terms }: { terms: readonly TermView[] }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
       {terms.map((term) => (
-        <article key={term.key} className="flex flex-col gap-4 rounded border border-border bg-card p-5">
+        <article key={term.key} className="flex flex-col gap-4 rounded-card border border-border bg-card p-4 text-card-foreground transition-colors duration-150 hover:border-primary/30 md:p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-base font-medium text-foreground">{term.title}</h3>
@@ -51,7 +51,7 @@ export function CoverageCards({ terms }: { terms: readonly TermView[] }) {
                       {ticket.href === null ? (
                         <span className="font-mono text-sm text-foreground">{ticket.key}</span>
                       ) : (
-                        <a href={ticket.href} target="_blank" rel="noopener noreferrer" className="font-mono text-sm text-primary underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">{ticket.key}</a>
+                        <a href={ticket.href} target="_blank" rel="noopener noreferrer" className="font-mono text-sm text-link underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{ticket.key}</a>
                       )}
                     </li>
                   ))}

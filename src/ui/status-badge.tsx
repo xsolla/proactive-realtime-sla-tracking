@@ -3,10 +3,10 @@
  * Success, warning, and danger are the meeting, at-risk, and breaching tokens.
  */
 const variants = {
-  neutral: "border-border bg-secondary text-foreground",
-  success: "border-success bg-secondary text-success",
-  warning: "border-warning bg-secondary text-warning",
-  danger: "border-danger bg-secondary text-danger",
+  neutral: "border-border bg-muted text-foreground",
+  success: "border-success bg-success text-success-foreground",
+  warning: "border-warning bg-warning text-warning-foreground",
+  danger: "border-danger bg-danger text-destructive-foreground",
 } as const;
 
 export type StatusBadgeVariant = keyof typeof variants;
@@ -20,7 +20,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded border px-2 py-1 text-xs font-medium ${variants[variant]}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium ${variants[variant]}`}
     >
       {label}
     </span>

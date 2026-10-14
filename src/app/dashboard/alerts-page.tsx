@@ -6,7 +6,7 @@ export function AlertsPage({ view }: { view: AlertsView }) {
   return (
     <>
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Alerts</h1>
+        <h1 className="font-heading text-2xl font-bold leading-tight md:text-3xl">Alerts</h1>
         {view.state === "ok" ? <p className="text-sm text-muted-foreground">{view.note}</p> : null}
       </header>
       {view.state === "error" ? (
@@ -15,7 +15,7 @@ export function AlertsPage({ view }: { view: AlertsView }) {
         <>
           <nav aria-label="Month" className="flex flex-wrap gap-2">
             {view.filter.map((option) => (
-              <a key={option.href} href={option.href} aria-current={option.selected ? "page" : undefined} className={`rounded border px-3 py-1 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ${option.selected ? "border-primary bg-secondary text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>{option.label}</a>
+              <a key={option.href} href={option.href} aria-current={option.selected ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-button border px-3 py-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${option.selected ? "border-primary bg-primary/10 text-brand-text" : "border-border text-muted-foreground hover:bg-accent"}`}>{option.label}</a>
             ))}
           </nav>
           {view.empty !== null ? (
@@ -30,7 +30,7 @@ export function AlertsPage({ view }: { view: AlertsView }) {
               <TableBody>
                 {view.rows.map((row) => (
                   <tr key={row.key} className="border-b border-border last:border-b-0">
-                    <TableCell><a href={row.href} className="font-medium text-foreground hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">{row.partner}</a></TableCell>
+                    <TableCell><a href={row.href} className="font-medium text-link underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{row.partner}</a></TableCell>
                     <TableCell>{row.scope}</TableCell>
                     <TableCell>{row.month}</TableCell>
                     <TableCell>{row.statusKind === "badge" ? <StatusBadge variant={row.badgeVariant} label={row.status} /> : <Chip>{row.status}</Chip>}</TableCell>

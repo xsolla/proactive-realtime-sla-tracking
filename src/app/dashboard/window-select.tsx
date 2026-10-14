@@ -27,7 +27,7 @@ export function WindowSelect({
             <a
               href={month.href}
               aria-current={month.selected ? "page" : undefined}
-              className={`flex items-center justify-between gap-4 whitespace-nowrap rounded px-3 py-2 text-sm text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ${month.selected ? "bg-muted" : ""}`}
+              className={`flex min-h-11 items-center justify-between gap-4 whitespace-nowrap rounded-md px-3 py-2 text-sm transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${month.selected ? "bg-primary/10 text-brand-text" : "text-foreground"}`}
             >
               <span>{month.title}</span>
               <span className="text-muted-foreground">{phaseLabel(month.phase)}</span>

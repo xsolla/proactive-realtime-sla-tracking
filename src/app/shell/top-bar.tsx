@@ -12,7 +12,7 @@ export function TopBar({
   showWindow?: boolean;
 }) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-8 py-4">
+    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-background px-4 py-3 md:px-6">
       <ol className="flex items-center gap-2 text-sm">
         {breadcrumb.map((crumb, index) => (
           <li key={`${crumb.label}:${index}`} className="flex items-center gap-2">
@@ -20,7 +20,7 @@ export function TopBar({
             {crumb.href === undefined ? (
               <span className="text-foreground">{crumb.label}</span>
             ) : (
-              <a href={crumb.href} className="text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
+              <a href={crumb.href} className="text-link underline underline-offset-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {crumb.label}
               </a>
             )}
@@ -36,9 +36,9 @@ export function TopBar({
   );
 }
 
-const SEGMENT = "rounded border px-3 py-1 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
-const SEGMENT_ACTIVE = "border-primary bg-secondary text-foreground";
-const SEGMENT_INACTIVE = "border-border text-muted-foreground hover:bg-muted";
+const SEGMENT = "inline-flex min-h-11 items-center rounded-button border px-3 py-2 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const SEGMENT_ACTIVE = "border-primary bg-primary/10 text-brand-text";
+const SEGMENT_INACTIVE = "border-border text-muted-foreground hover:bg-accent";
 
 /** Plain links to the route that sets the view cookie; no client code. */
 function ViewToggle({ active }: { active: "technical" | "business" }) {

@@ -31,10 +31,10 @@ export function Tile({
   emphasis?: boolean;
 }) {
   return (
-    <div className={`flex flex-col gap-3 rounded border p-5 ${emphasis ? "border-danger bg-danger/10" : "border-border bg-card"}`}>
+    <div className={`flex flex-col gap-3 rounded-card border p-3 text-card-foreground transition-colors duration-150 md:p-4 ${emphasis ? "border-danger bg-danger/10" : "border-border bg-card hover:border-primary/30"}`}>
       <p className={`text-xs font-medium uppercase tracking-wide ${labelTone === undefined ? "text-muted-foreground" : labelTones[labelTone]}`}>{label}</p>
-      <p className={`font-mono text-3xl tabular-nums ${values[tone]}`}>{value}</p>
-      {detail === null ? null : <p className="font-mono text-sm text-muted-foreground">{detail}</p>}
+      <p className={`font-mono text-2xl font-bold tabular-nums md:text-3xl ${values[tone]}`}>{value}</p>
+      {detail === null ? null : <p className="text-xs leading-relaxed text-muted-foreground">{detail}</p>}
     </div>
   );
 }

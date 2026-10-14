@@ -29,11 +29,11 @@ export function Shell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col lg:grid lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]">
+    <div className="flex min-h-dvh flex-col bg-background lg:grid lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]">
       <Sidebar nav={nav} />
       <div className="flex min-w-0 flex-col">
         <TopBar frame={frame} breadcrumb={breadcrumb} showWindow={showWindow} />
-        <main className="mx-auto flex w-full min-w-0 max-w-[90rem] flex-col gap-10 px-8 py-8">{children}</main>
+        <main className="mx-auto flex w-full min-w-0 max-w-[1400px] flex-col gap-8 px-4 py-4 md:px-6 md:py-6">{children}</main>
       </div>
     </div>
   );

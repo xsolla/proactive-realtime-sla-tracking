@@ -5,7 +5,7 @@ export function formStateFromTerms(terms: ContractFile, version: number): Contra
   return {
     effectiveFrom: terms.effectiveFrom,
     effectiveTo: terms.effectiveTo ?? "",
-    contractAggregateCap: terms.contractAggregateCap,
+    contractAggregateCap: terms.contractAggregateCap === null ? "" : String(terms.contractAggregateCap),
     scopes: terms.scopes.map(scopeFromStored),
     updatedBy: "",
     expectedVersion: version,
@@ -36,7 +36,10 @@ function scopeFromStored(scope: ContractScope): ContractFormScope {
     target: String(scope.target),
     penaltyKind: scope.penalty.kind,
     tiers,
-    perScopeCap: scope.penalty.kind === "tiers" ? scope.penalty.perScopeCap : null,
+    perScopeCap:
+      scope.penalty.kind === "tiers" && scope.penalty.perScopeCap !== null
+        ? String(scope.penalty.perScopeCap)
+        : "",
     sourceClause: scope.sourceClause ?? "",
   };
 }
