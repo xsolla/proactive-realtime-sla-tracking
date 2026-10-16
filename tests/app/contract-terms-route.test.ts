@@ -1,11 +1,11 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, PUT } from "@/app/api/sla/contract-terms/[partner]/route";
 import { ADD_CONTRACT_TERMS, CONTRACT_ON_FILE, VIEW_TERMS } from "@/app/dashboard/copy";
 import { termsLinkFor } from "@/app/dashboard/overview";
 import { buildPartnerPage } from "@/app/dashboard/partner-page";
 import { buildTechnicalPartners } from "@/app/dashboard/view";
-import PartnerTermsPage from "@/app/partners/[partner]/terms/page";
+import { GET as termsPageGet } from "@/app/api/sla/pages/partners/[partner]/terms/route";
+import type { TermsPageView } from "@/app/dashboard/pages";
 import {
   partitionOutages,
   readContractTerms,
@@ -32,16 +32,6 @@ vi.mock("@/data", async (importOriginal) => {
   };
 });
 
-
-vi.mock("next/navigation", () => ({
-  notFound: () => {
-    throw new Error("NEXT_NOT_FOUND");
-  },
-  useRouter: () => ({
-    push: () => undefined,
-    refresh: () => undefined,
-  }),
-}));
 
 const AS_OF = new Date("2026-06-15T12:00:00.000Z");
 const WINDOW = {
@@ -83,6 +73,12 @@ function saveBody(
     updatedBy,
     terms: body,
   };
+}
+
+/** The terms page envelope the mini-app renders, read through its route with the test database. */
+async function termsEnvelope(partner: string, query = ""): Promise<{ status: number; body: { frame: { windowKey: string }; nav: { partners: { href: string }[] }; breadcrumb: { label: string; href?: string }[]; showWindow: boolean; view: TermsPageView } }> {
+  const response = await termsPageGet(new Request(`http://localhost/api/sla/pages/partners/${partner}/terms${query}`), { params: Promise.resolve({ partner }) });
+  return { status: response.status, body: await response.json() };
 }
 
 function put(partner: string, body: unknown): Promise<Response> {
@@ -182,33 +178,21 @@ describe("contract terms routes and technical view", () => {
     expect(present.terms.scopes[0]?.sourceClause).toBe("FIXTURE clause alpha");
     expect(present.terms.scopes[0]?.target).toBe(97.25);
 
-    const view = renderToStaticMarkup(
-      await PartnerTermsPage({
-        params: Promise.resolve({ partner: "roblox" }),
-        searchParams: Promise.resolve({}),
-      }),
-    );
-    expect(view).toMatch(/<a href="\/\?window=[^"]+"[^>]*>Overview<\/a>/);
-    expect(view).toMatch(/<a href="\/partners\/roblox\?window=[^"]+"[^>]*>Roblox<\/a>/);
-    expect(view).toContain('<span class="text-foreground">Contract terms</span>');
-    expect(view).not.toContain(">Downtime<");
-    expect(view).toContain("FIXTURE clause alpha");
-    expect(view).toContain("97.25%");
-    expect(view).toContain("Draft. These terms are not scoring.");
-    expect(view).toContain('href="/partners/roblox/terms?edit=1"');
-    expect(view).toContain(">Edit<");
-    expect(view).not.toContain("99.95");
-    expect(view).not.toContain("99.9");
-
-    const editing = renderToStaticMarkup(
-      await PartnerTermsPage({
-        params: Promise.resolve({ partner: "roblox" }),
-        searchParams: Promise.resolve({ edit: "1" }),
-      }),
-    );
-    expect(inputValue(editing, "target-payments")).toBe("97.25");
-    expect(editing).not.toMatch(/placeholder=/i);
-    expect(editing).not.toContain("99.95");
+    const { status, body } = await termsEnvelope("roblox");
+    expect(status).toBe(200);
+    expect(body.showWindow).toBe(false);
+    expect(body.breadcrumb.map((crumb) => crumb.label)).toEqual(["Overview", "Roblox", "Contract terms"]);
+    expect(body.breadcrumb[0]?.href).toMatch(/^\/\?window=/);
+    expect(body.breadcrumb[1]?.href).toMatch(/^\/partners\/roblox\?window=/);
+    const row = body.view.row;
+    if (row === null) throw new Error("expected a stored row");
+    expect(row.lifecycle).toBe("terms_pending_review");
+    expect(row.terms.scopes[0]?.sourceClause).toBe("FIXTURE clause alpha");
+    expect(row.terms.scopes[0]?.target).toBe(97.25);
+    expect(row.updatedBy).toBe("ada");
+    expect(body.view.initial.expectedVersion).toBe(1);
+    expect(body.view.initial.scopes[0]?.target).toBe("97.25");
+    expect(JSON.stringify(body.view)).not.toContain("99.95");
 
     const updated = await put(
       "roblox",
@@ -217,31 +201,21 @@ describe("contract terms routes and technical view", () => {
     expect(updated.status).toBe(200);
     expect(await updated.json()).toEqual({ kind: "saved", version: 2 });
 
-    const again = renderToStaticMarkup(
-      await PartnerTermsPage({
-        params: Promise.resolve({ partner: "roblox" }),
-        searchParams: Promise.resolve({}),
-      }),
-    );
-    expect(again).toContain("FIXTURE clause beta");
-    expect(again).toContain("96.5%");
-    expect(again).not.toContain("FIXTURE clause alpha");
-    expect(again).toContain("Last saved by grace");
+    const again = (await termsEnvelope("roblox")).body.view;
+    expect(again.row?.terms.scopes[0]?.sourceClause).toBe("FIXTURE clause beta");
+    expect(again.row?.terms.scopes[0]?.target).toBe(96.5);
+    expect(again.row?.updatedBy).toBe("grace");
+    expect(again.row?.updatedAtLabel).toMatch(/UTC$/);
+    expect(again.initial.expectedVersion).toBe(2);
   });
 
   it("keeps a window passed in the query on the sidebar links, and hides the month picker", async () => {
     await openDb();
-    const html = renderToStaticMarkup(
-      await PartnerTermsPage({
-        params: Promise.resolve({ partner: "niantic" }),
-        searchParams: Promise.resolve({ window: "2026-06" }),
-      }),
-    );
-    const sidebar = /<nav[\s\S]*?<\/nav>/.exec(html)?.[0] ?? "";
-    expect(sidebar).toContain('href="/?window=2026-06"');
-    expect(sidebar).toContain('href="/partners/niantic?window=2026-06"');
-    expect(html).toContain('href="/partners/niantic?window=2026-06"');
-    expect(html).not.toContain("Window");
+    const { body } = await termsEnvelope("niantic", "?window=2026-06");
+    expect(body.frame.windowKey).toBe("2026-06");
+    expect(body.showWindow).toBe(false);
+    expect(body.nav.partners.some((partner) => partner.href === "/partners/niantic?window=2026-06")).toBe(true);
+    expect(body.breadcrumb[1]?.href).toBe("/partners/niantic?window=2026-06");
   });
 
   it("does not score a draft, and scores once the same terms are activated", async () => {
@@ -337,37 +311,25 @@ describe("contract terms routes and technical view", () => {
 
   it("returns not found for the business role", async () => {
     await openDb();
+    expect((await termsEnvelope("roblox", "?view=business")).status).toBe(404);
     process.env.VIEWER_ROLE = "business";
-    await expect(
-      PartnerTermsPage({
-        params: Promise.resolve({ partner: "roblox" }),
-        searchParams: Promise.resolve({}),
-      }),
-    ).rejects.toThrow("NEXT_NOT_FOUND");
+    expect((await termsEnvelope("roblox")).status).toBe(404);
   });
 
-  it("renders an empty add form with no contract figures", async () => {
+  it("serves an empty add form with no contract figures", async () => {
     await openDb();
-    const html = renderToStaticMarkup(
-      await PartnerTermsPage({
-        params: Promise.resolve({ partner: "niantic" }),
-        searchParams: Promise.resolve({}),
-      }),
-    );
-    expect(html).toContain("Add contract terms");
-    expect(html).not.toMatch(/placeholder=/i);
-    expect(html).not.toContain("99.95");
-    expect(html).not.toContain("99.9");
-    expect(html).not.toContain("EXAMPLE");
-    expect(inputValue(html, "effective-from")).toBe("");
-    expect(inputValue(html, "target-scope-1")).toBe("");
+    const { body } = await termsEnvelope("niantic");
+    expect(body.view.row).toBeNull();
+    expect(body.view.initial).toMatchObject({ effectiveFrom: "", effectiveTo: "", contractAggregateCap: "", expectedVersion: null });
+    expect(body.view.initial.scopes).toHaveLength(1);
+    expect(body.view.initial.scopes[0]?.target).toBe("");
+    expect(body.view.services.length).toBeGreaterThan(0);
+    const serialised = JSON.stringify(body.view.initial);
+    expect(serialised).not.toContain("99.95");
+    expect(serialised).not.toContain("EXAMPLE");
   });
 });
 
-function inputValue(html: string, id: string): string | undefined {
-  const tag = html.match(/<input\b[^>]*>/g)?.find((item) => item.includes(`id="${id}"`));
-  return tag?.match(/\bvalue="([^"]*)"/)?.[1];
-}
 
 async function feedFor(database: TestDatabase) {
   const feed = await getSlaFeed({

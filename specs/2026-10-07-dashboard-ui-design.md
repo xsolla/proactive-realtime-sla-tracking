@@ -4,6 +4,7 @@
 **Date:** 2026-10-07
 **Parent spec:** `specs/sla-dashboard-spec.md`. This document revises its §9 (technical view). Where the two disagree on the technical view's structure, this document wins; everything else in the parent spec stands.
 **Companion:** `specs/2026-09-25-ingestion-in-app-design.md` (unchanged)
+**Revised 2026-10-16:** the pages described here are rendered by the `sla-tracking` mini-app (`xsolla/mini-apps`, `apps/sla-tracking`) from the page envelopes `/api/sla/pages/*` return; see `specs/2026-10-16-mini-app-split-design.md`. The routes in §3 are the mini-app's hash routes, the loader in §5 feeds the page endpoints, and the view toggle in §4 is a browser preference sent as `?view=`. Everything about what each page shows stands; §11 and §12 are superseded as noted there.
 
 ---
 
@@ -38,11 +39,11 @@ Reference: two mockups supplied by the owner on 2026-10-07 (a per-partner page a
 
 `window` resolves through the existing `resolveDashboardWindow`; an invalid or missing value falls back to the current UTC month. Every link the shell emits carries the current `window`. An unknown partner slug returns 404 via `notFound()`.
 
-All five routes exist on `sla-dashboard` only; `sla-ingestion`'s proxy keeps returning 404 for them.
+Revised 2026-10-16: the five routes are hash routes in the mini-app (`#/`, `#/partners/scopely?window=2026-10`, …), each backed by one page endpoint on `sla-dashboard` (`/api/sla/pages/overview`, `/api/sla/pages/partners/[partner]`, `/api/sla/pages/partners/[partner]/terms`, `/api/sla/pages/alerts`, `/api/sla/pages/health`). An unknown partner slug is a 404 from the endpoint, rendered as the mini-app's not-found state. `sla-ingestion` keeps returning 404 for every `/api/sla/*` path.
 
 ### 3.1 Roles
 
-`resolveViewer()` decides the role per request: the `sla_view` cookie when it names a dashboard role, otherwise `getViewer()` and `VIEWER_ROLE`. The same routes serve both roles; the viewer picks the role with the top-bar toggle, and the page reads the feed for that role and shapes a role-specific model on the server.
+`resolveViewer()` decides the role per request: the `view` query parameter when it names a dashboard role (the mini-app sends its stored preference; revised 2026-10-16, no cookie), otherwise `getViewer()` and `VIEWER_ROLE`. The same routes serve both roles; the viewer picks the role with the top-bar toggle, and the page reads the feed for that role and shapes a role-specific model on the server.
 
 | Route | technical / system | business |
 | --- | --- | --- |
@@ -270,6 +271,8 @@ Scored results also carry `comparison`, from the same `baseline()` as tracking r
 
 ## 11. Module layout
 
+**Superseded 2026-10-16.** The `.tsx` files, `shell/`, the pages and `src/ui/` listed below moved to `xsolla/mini-apps` `apps/sla-tracking` (`src/shell`, `src/dashboard`, `src/terms`, `src/ui`, with `src/api/types.ts` as a hand copy of the envelope types). This repo keeps `src/app/dashboard/{view,overview,partner-page,alerts-view,nav,badges,model,outage-view,copy,load,pages,run-backtest}.ts` and the route handlers under `src/app/api/sla/pages/`. §11.1 stands: the view model is built on the backend and the mini-app renders it. The original layout, for the record:
+
 ```
 src/app/
 ├── shell/            shell.tsx, sidebar.tsx, top-bar.tsx
@@ -334,7 +337,7 @@ type PartnerView = {
 
 ## 12. Testing
 
-Same style as today: `renderToStaticMarkup`, assertions on text and attributes, no snapshots. `tests/app/dashboard-render.test.tsx` splits into:
+**Revised 2026-10-16.** Builder tests stay here as `.test.ts` (`overview`, `partner-page`, `alerts`, `health`, `nav`, `view`, `badges`, `dashboard-copy`), plus `pages.test.ts` (envelopes, JSON round trip, committed samples under `tests/app/fixtures/pages/`), `pages-routes.test.ts`, `review-route.test.ts`, `contract-terms-route.test.ts` (through the terms page endpoint) and `business-pages.test.ts` (the sentinel values are absent from the business envelopes' JSON). The render tests moved to the mini-app (`src/**/*.test.tsx` with vitest and happy-dom, one Playwright spec per `qa.views` entry). The original split, for the record:
 
 - `shell.test.tsx`: dot tone per partner state, active entry, badges including `!` on error, window param preserved on every href.
 - `overview.test.tsx`: tile counts, attention ordering, empty sentence versus error row, no `0%` for an unentered clause, settled note.

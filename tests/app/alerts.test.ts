@@ -1,9 +1,7 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AlertsPage } from "@/app/dashboard/alerts-page";
 import { buildAlertsView } from "@/app/dashboard/alerts-view";
 import { alertsBadge } from "@/app/dashboard/badges";
-import { ALERTS_NOTE, ALERTS_UNAVAILABLE } from "@/app/dashboard/copy";
+import { ALERTS_NOTE } from "@/app/dashboard/copy";
 import { buildTechnicalPartners } from "@/app/dashboard/view";
 import { scoredRow } from "../support/rows";
 
@@ -20,10 +18,11 @@ const rows = [
 ];
 const partners = buildTechnicalPartners([scoredRow()], "open", "2026-09", null);
 
-describe("alerts page", () => {
+describe("alerts view", () => {
   it("lists the selected month, titles scopes, and counts active alerts for the badge", () => {
     const view = buildAlertsView({ alerts: rows, filterKey: "2026-09", months, partners });
     if (view.state !== "ok") throw new Error("expected ok");
+    expect(view.note).toBe(ALERTS_NOTE);
     expect(view.rows.map((row) => `${row.partner}:${row.scope}:${row.status}:${row.lastAlerted}`)).toEqual([
       "Scopely:Payments:Breached:2026-09-20 01:00:00 UTC",
       "Kabam:Service: Login:Heads-up:2026-09-10 13:00:00 UTC",
@@ -32,56 +31,37 @@ describe("alerts page", () => {
     expect(view.rows[0]?.href).toBe("/partners/scopely?window=2026-09");
     expect(view.filter.map((option) => option.label)).toEqual(["All months", "September 2026", "August 2026"]);
     expect(alertsBadge(rows, "2026-09")).toEqual({ count: 2 });
-    const html = renderToStaticMarkup(<AlertsPage view={view} />);
-    expect(html).toContain(ALERTS_NOTE);
-    expect(html).toContain("Breached");
-    expect(html).not.toContain("—");
+    expect(JSON.stringify(view)).not.toContain("—");
   });
 
-  it("renders at_risk and breaching as StatusBadge and every other status as a neutral Chip", () => {
+  it("marks at_risk and breaching as badges and every other status as a neutral chip", () => {
     const view = buildAlertsView({ alerts: rows, filterKey: "2026-09", months, partners });
-    const html = renderToStaticMarkup(<AlertsPage view={view} />);
-    const span = (label: string) => html.match(new RegExp(`<span class="[^"]*">${label}</span>`))?.[0] ?? "";
-    expect(span("Breached")).toContain("bg-danger");
-    expect(span("Breached")).toContain("text-destructive-foreground");
-    const headsUp = span("Heads-up");
-    expect(headsUp).not.toBe("");
-    expect(headsUp).not.toContain("text-danger");
-    expect(headsUp).not.toContain("text-warning");
-    const meeting = span("Meeting");
-    expect(meeting).not.toBe("");
-    expect(meeting).not.toContain("text-danger");
-    expect(meeting).not.toContain("text-warning");
+    if (view.state !== "ok") throw new Error("expected ok");
+    expect(view.rows.map((row) => `${row.status}:${row.statusKind}:${row.badgeVariant}`)).toEqual(["Breached:badge:danger", "Heads-up:chip:warning", "Meeting:chip:warning"]);
     const august = buildAlertsView({ alerts: rows, filterKey: "2026-08", months, partners });
-    expect(renderToStaticMarkup(<AlertsPage view={august} />)).toMatch(/<span class="[^"]*bg-warning[^"]*text-warning-foreground[^"]*">At risk<\/span>/);
+    if (august.state !== "ok") throw new Error("expected ok");
+    expect(august.rows.map((row) => `${row.status}:${row.statusKind}:${row.badgeVariant}`)).toEqual(["At risk:badge:warning"]);
   });
 
-  it("marks only the selected filter link with aria-current", () => {
+  it("marks only the selected filter", () => {
     const view = buildAlertsView({ alerts: rows, filterKey: "2026-09", months, partners });
-    const html = renderToStaticMarkup(<AlertsPage view={view} />);
-    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/<a href="\/alerts\?window=2026-09" aria-current="page"[^>]*>September 2026<\/a>/);
-    expect(html).toMatch(/<a href="\/alerts\?window=all"(?![^>]*aria-current)[^>]*>All months<\/a>/);
+    if (view.state !== "ok") throw new Error("expected ok");
+    expect(view.filter.filter((option) => option.selected).map((option) => option.href)).toEqual(["/alerts?window=2026-09"]);
+    expect(view.filter[0]).toEqual({ label: "All months", href: "/alerts?window=all", selected: false });
   });
 
   it("lists every month under All and writes the empty sentence for a quiet month", () => {
     const all = buildAlertsView({ alerts: rows, filterKey: "all", months, partners });
     expect(all.state === "ok" && all.rows).toHaveLength(4);
+    expect(all.state === "ok" && all.empty).toBeNull();
     const quiet = buildAlertsView({ alerts: rows, filterKey: "2026-07", months: [...months, { key: "2026-07", title: "July 2026", phase: "settled", phaseLabel: "Settled", href: "/alerts?window=2026-07", selected: false }], partners });
     expect(quiet.state === "ok" && quiet.empty).toBe("No alerts recorded for July 2026.");
-    const html = renderToStaticMarkup(<AlertsPage view={quiet} />);
-    expect(html).toContain("No alerts recorded for July 2026.");
-    expect(html).not.toContain("<table");
+    expect(quiet.state === "ok" && quiet.rows).toEqual([]);
   });
 
-  it("renders the error state, never an empty list, when the read failed", () => {
+  it("reports the error state, never an empty list, when the read failed", () => {
     const view = buildAlertsView({ alerts: { status: "error" }, filterKey: "2026-09", months, partners });
-    expect(view.state).toBe("error");
-    const html = renderToStaticMarkup(<AlertsPage view={view} />);
-    expect(html).toContain(ALERTS_UNAVAILABLE);
-    expect(html).toContain('role="alert"');
-    expect(html).not.toContain("<table");
-    expect(html).not.toContain("No alerts recorded");
+    expect(view).toEqual({ state: "error" });
     expect(alertsBadge({ status: "error" }, "2026-09")).toEqual({ status: "error" });
   });
 });

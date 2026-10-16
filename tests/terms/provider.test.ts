@@ -183,7 +183,7 @@ describe("FixtureTermsProvider", () => {
     const barrel = readFileSync(path.resolve("src/terms/index.ts"), "utf8");
     expect(barrel).not.toMatch(/FixtureTermsProvider|terms\/fixture|fixtures\/terms/);
 
-    const roots = ["src/app", "src/feed", "src/alerts", "src/ui", "src/engine", "src/data"];
+    const roots = ["src/app", "src/feed", "src/alerts", "src/engine", "src/data"];
     for (const root of roots) {
       for (const file of sourceFiles(path.resolve(root))) {
         const source = readFileSync(file, "utf8");

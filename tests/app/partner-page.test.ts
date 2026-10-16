@@ -1,9 +1,7 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BACKTEST_FAILED, BACKTEST_TRACKING_ONLY, CONTRACT_ON_FILE, NO_DOWNTIME, NO_TERMS, OUTSIDE_SCOPES, QUERY_FAILED, ROW_UNAVAILABLE, SETTLED_NOTE, TRACKING_ONLY_NOTE } from "@/app/dashboard/copy";
+import { BACKTEST_FAILED, BACKTEST_TRACKING_ONLY, CONTRACT_ON_FILE, NO_TERMS, OUTSIDE_SCOPES, QUERY_FAILED, ROW_UNAVAILABLE, SETTLED_NOTE, TRACKING_ONLY_NOTE } from "@/app/dashboard/copy";
 import { toBacktestPanel } from "@/app/dashboard/model";
 import { buildPartnerPage } from "@/app/dashboard/partner-page";
-import { PartnerPageView } from "@/app/dashboard/partner-page-view";
 import { buildBusinessPartners, buildTechnicalPartners, unavailablePartners } from "@/app/dashboard/view";
 import { businessScoredRow, scoredRow, trackingRow } from "../support/rows";
 
@@ -32,20 +30,15 @@ describe("partner page", () => {
     expect(view.tiles[3]?.detail).toBe("of 21.6 min allowed");
     expect(view.trackingHeading).toBe(OUTSIDE_SCOPES);
     expect(view.backtest?.enabled).toBe(true);
-
-    const html = renderToStaticMarkup(<PartnerPageView view={view} backtest={null} />);
-    expect(html).toContain("76.0 / 21.6 min down");
-    expect(html).toContain("351.9% consumed");
-    expect(html).toContain('href="https://jira.example/browse/GTO-600"');
-    expect(html).toContain("GTO-601");
-    expect(html).toContain("<details");
-    expect(html).toContain("Started");
-    expect(html).not.toContain("Coverage terms");
-    expect(html).not.toContain("UPTIME · MONTHLY");
-    expect(html).not.toContain("—");
+    const term = view.terms[0];
+    expect(term?.downLine).toBe("76.0 / 21.6 min down");
+    expect(term?.consumedPercent).toBe("351.9% consumed");
+    expect(term?.tickets?.map((ticket) => `${ticket.key}:${ticket.href ?? "plain"}`)).toEqual(["GTO-601:plain", "GTO-600:https://jira.example/browse/GTO-600"]);
+    expect(term?.outages?.[0]?.started).toBeTruthy();
+    expect(view.tracking).toHaveLength(1);
   });
 
-  it("renders a tracking-only partner with the note, no cards, and No terms tiles", () => {
+  it("builds a tracking-only partner with the note and No terms tiles", () => {
     const view = buildPartnerPage({
       partner: technical([trackingRow({ partner: "kabam" })], "kabam"),
       phase: "settled", windowKey: "2026-09", failure: null, role: "technical",
@@ -53,12 +46,11 @@ describe("partner page", () => {
     expect(view.tiles.map((tile) => tile.value)).toEqual([NO_TERMS, NO_TERMS, NO_TERMS, "42 min"]);
     expect(view.trackingNote).toBe(TRACKING_ONLY_NOTE);
     expect(view.termsLink).toEqual({ label: "Add contract terms", href: "/partners/kabam/terms" });
-    const html = renderToStaticMarkup(<PartnerPageView view={view} backtest={null} />);
-    expect(html).not.toContain("UPTIME · MONTHLY");
-    expect(html).toContain("Compared with recent months");
+    expect(view.tracking[0]?.comparison).toBeTruthy();
+    expect(view.worstLabel).toBeNull();
   });
 
-  it("renders the business variant without merchant id, backtest, tickets, clause, or outage expanders", () => {
+  it("builds the business variant without merchant id, backtest, tickets, clause, or outages", () => {
     const partner = buildBusinessPartners([businessScoredRow()], "open", "2026-09").find((entry) => entry.id === "scopely");
     const view = buildPartnerPage({ partner: partner!, phase: "open", windowKey: "2026-09", failure: null, role: "business" });
     expect(view.meta).toEqual(["1 term", "Monthly window"]);
@@ -68,43 +60,35 @@ describe("partner page", () => {
       "Covered services=1", "At risk=1 / 1", "Breached=0", "Downtime this window=18.4 min",
     ]);
     expect(view.tiles[0]?.detail).toBeNull();
-    const html = renderToStaticMarkup(<PartnerPageView view={view} backtest={null} />);
-    expect(html).not.toContain("151639");
-    expect(html).not.toContain("data-outages");
-    expect(html).toContain("Window trend");
-    expect(html).not.toContain("Tickets");
-    expect(html).not.toContain("Clause");
-    expect(html).toContain("99.915%");
+    const term = view.terms[0];
+    expect(term?.tickets).toBeNull();
+    expect(term?.clause).toBeNull();
+    expect(term?.outages).toBeNull();
+    expect(term?.actual).toBe("99.915%");
+    expect(term?.trend.bars.length).toBeGreaterThan(0);
+    expect(JSON.stringify(view)).not.toContain("151639");
   });
 
-  it("shows the failure state without rendering coverage cards", () => {
-    const empty = buildPartnerPage({ partner: technical([scoredRow({ outages: [], usedMinutes: 0 })]), phase: "open", windowKey: "2026-09", failure: null, role: "technical" });
-    expect(renderToStaticMarkup(<PartnerPageView view={empty} backtest={null} />)).not.toContain("Coverage terms");
+  it("builds the failure state with Unavailable tiles and the error row, never zeros", () => {
     const failed = buildPartnerPage({ partner: unavailablePartners(null, "technical")[0]!, phase: "open", windowKey: "2026-09", failure: QUERY_FAILED, role: "technical" });
-    const html = renderToStaticMarkup(<PartnerPageView view={failed} backtest={null} />);
-    expect(html).toContain(QUERY_FAILED);
+    expect(failed.failure).toBe(QUERY_FAILED);
     expect(failed.worstLabel).toBeNull();
-    expect(failed.unavailableRow).toMatchObject({ key: "scopely:unavailable", service: "Unavailable", minutes: "Unavailable", comparison: ROW_UNAVAILABLE, outages: null });
+    expect(failed.unavailable).toBe(true);
+    expect(failed.unavailableRow).toMatchObject({ key: "scopely:unavailable", service: "Unavailable", minutes: "Unavailable", incidents: "Unavailable", comparison: ROW_UNAVAILABLE, outages: null });
     expect(failed.unavailableRow?.trend.bars.at(-1)).toEqual({ month: "2026-09", label: "September 2026", minutes: 0, current: true });
     expect(failed.tiles.every((tile) => tile.value === "Unavailable")).toBe(true);
-    expect(html).not.toContain(">0<");
-    expect(html.match(/>Unavailable</g)?.length ?? 0).toBeGreaterThanOrEqual(4);
-    expect(html).toContain(ROW_UNAVAILABLE);
-    expect(html).toMatch(/class="[^"]*text-danger[^"]*">Unavailable\. This is not zero downtime\./);
-    expect(html).not.toContain("UPTIME · MONTHLY");
-    expect(html).not.toContain("<details");
-    const header = html.slice(0, html.indexOf("</header>"));
-    for (const text of ["Tracking only", "Meeting", "At risk", "Breached"]) expect(header).not.toContain(text);
+    expect(failed.terms).toEqual([]);
+    expect(failed.tracking).toEqual([]);
+    expect(failed.trackingNote).toBeNull();
   });
 
-  it("says no downtime was recorded, with no table, for a partner without terms or tracking rows", () => {
+  it("says no downtime was recorded for a partner without terms or tracking rows", () => {
     const view = buildPartnerPage({ partner: technical([scoredRow()], "kabam"), phase: "open", windowKey: "2026-09", failure: null, role: "technical" });
     expect(view.terms).toEqual([]);
     expect(view.tracking).toEqual([]);
-    const html = renderToStaticMarkup(<PartnerPageView view={view} backtest={null} />);
-    expect(html).toContain(NO_DOWNTIME);
-    expect(html).toContain(TRACKING_ONLY_NOTE);
-    expect(html).not.toContain("<table");
+    expect(view.unavailable).toBe(false);
+    expect(view.trackingNote).toBe(TRACKING_ONLY_NOTE);
+    expect(view.trackingHeading).toBe("Recorded downtime");
   });
 
   it("shows a true zero for a partner with no downtime, distinct from the unavailable state", () => {
@@ -119,8 +103,7 @@ describe("partner page", () => {
     expect(tracked.tiles.map((tile) => tile.value)).toEqual([NO_TERMS, NO_TERMS, NO_TERMS, "42 min"]);
   });
 
-  it("renders a bound partner's historical replay without turning no-exposure months into zeros", () => {
-    const view = buildPartnerPage({ partner: technical([scoredRow()]), phase: "open", windowKey: "2026-09", failure: null, role: "technical" });
+  it("builds a bound partner's historical replay without turning no-exposure months into zeros", () => {
     const report = {
       range: { description: "as far back as data exists", from: "2026-01-01", through: "2026-03-31" },
       partners: [
@@ -136,42 +119,25 @@ describe("partner page", () => {
         },
       ],
     };
-    const html = renderToStaticMarkup(<PartnerPageView view={view} backtest={toBacktestPanel(report)} />);
-    expect(html).toContain("as far back as data exists: 2026-01-01 through 2026-03-31");
-    expect(html).toContain("No exposure");
-    expect(html).toContain("March 2026");
-    expect(html).toContain(">2<");
-    expect(html).toContain(">8<");
-    const replay = html.slice(html.indexOf("Historical replay"));
-    const january = replay.slice(replay.indexOf("January 2026"), replay.indexOf("March 2026", replay.indexOf("January 2026")));
-    expect(january).toContain("No exposure");
-    expect(january).not.toMatch(/>0</);
-
-    const errorHtml = renderToStaticMarkup(<PartnerPageView view={view} backtest={{ state: "error", message: BACKTEST_FAILED }} />);
-    expect(errorHtml).toContain(BACKTEST_FAILED);
-    expect(errorHtml).not.toContain("No exposure");
+    const panel = toBacktestPanel(report);
+    if (panel.state !== "ready") throw new Error("expected a ready panel");
+    expect(panel.rangeLabel).toBe("as far back as data exists: 2026-01-01 through 2026-03-31");
+    expect(panel.rows[0]).toMatchObject({ kind: "none", month: "January 2026", label: "No exposure" });
+    expect(panel.rows[1]).toMatchObject({ kind: "counted", month: "March 2026", scope: "payments", steps: "17", breaching: "2", trend: "3", level: "4", meeting: "8" });
+    expect(JSON.stringify(panel.rows[0])).not.toContain('"0"');
+    expect(BACKTEST_FAILED).toContain("not a result of zero breaches");
   });
 
   it("disables Backtest with its tooltip for an unbound tracking-only partner, and offers it for a bound one", () => {
     const tracking = buildPartnerPage({ partner: technical([trackingRow({ partner: "kabam" })], "kabam"), phase: "open", windowKey: "2026-09", failure: null, role: "technical" });
-    expect(tracking.backtest?.enabled).toBe(false);
-    const trackingHtml = renderToStaticMarkup(<PartnerPageView view={tracking} backtest={null} />);
-    expect(trackingHtml).toMatch(/<button(?=[^>]*aria-label="Backtest Kabam")(?=[^>]*\sdisabled="")[^>]*>/);
-    expect(trackingHtml).toContain(BACKTEST_TRACKING_ONLY.replace("'", "&#x27;"));
-    expect(trackingHtml).not.toContain('name="backtest"');
-
+    expect(tracking.backtest).toEqual({ enabled: false, windowKey: "2026-09", tooltip: BACKTEST_TRACKING_ONLY });
     const bound = buildPartnerPage({ partner: technical([scoredRow()]), phase: "open", windowKey: "2026-09", failure: null, role: "technical" });
-    const boundHtml = renderToStaticMarkup(<PartnerPageView view={bound} backtest={null} />);
-    expect(boundHtml).toMatch(/<form[^>]*method="get"/);
-    expect(boundHtml).toContain('name="backtest"');
-    expect(boundHtml).not.toMatch(/<button[^>]*\sdisabled=""/);
+    expect(bound.backtest?.enabled).toBe(true);
   });
 
-  it("shows the settled note and never calls a settled window final", () => {
+  it("carries the settled note and never calls a settled window final", () => {
     const view = buildPartnerPage({ partner: technical([scoredRow()]), phase: "settled", windowKey: "2026-08", failure: null, role: "technical" });
-    const html = renderToStaticMarkup(<PartnerPageView view={view} backtest={null} />);
-    expect(html).toContain(SETTLED_NOTE);
-    expect(html.toLowerCase()).not.toContain("final");
+    expect(view.settledNote).toBe(SETTLED_NOTE);
+    expect(JSON.stringify(view).toLowerCase()).not.toContain("final");
   });
-
 });

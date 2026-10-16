@@ -94,12 +94,18 @@ describe("isPathAllowed", () => {
   });
 
   describe("dashboard role", () => {
-    it("allows /", () => {
-      expect(isPathAllowed("dashboard", "/")).toBe(true);
+    it("404s / and every non-API path: the UI is the mini-app", () => {
+      expect(isPathAllowed("dashboard", "/")).toBe(false);
+      expect(isPathAllowed("dashboard", "/partners/scopely")).toBe(false);
+      expect(isPathAllowed("dashboard", "/_next/static/x.js")).toBe(false);
+      expect(isPathAllowed("dashboard", "/api")).toBe(false);
     });
 
-    it("allows /api/sla/feed", () => {
+    it("allows /api/sla/feed and the page endpoints", () => {
       expect(isPathAllowed("dashboard", "/api/sla/feed")).toBe(true);
+      expect(isPathAllowed("dashboard", "/api/sla/pages/overview")).toBe(true);
+      expect(isPathAllowed("dashboard", "/api/sla/pages/partners/scopely/terms/")).toBe(true);
+      expect(isPathAllowed("dashboard", "/api/sla/contract-terms/scopely/review")).toBe(true);
     });
 
     it("allows /api/internal/alerts/run", () => {
@@ -118,9 +124,10 @@ describe("isPathAllowed", () => {
       expect(isPathAllowed("dashboard", "/api/ingest/pir-approved/extra")).toBe(false);
     });
 
-    it("allows contract terms API routes and the terms page", () => {
+    it("allows the contract terms API routes but not the old terms page", () => {
       expect(isPathAllowed("dashboard", "/api/sla/contract-terms/scopely")).toBe(true);
-      expect(isPathAllowed("dashboard", "/partners/scopely/terms")).toBe(true);
+      expect(isPathAllowed("dashboard", "/api/sla/pages/partners/scopely/terms")).toBe(true);
+      expect(isPathAllowed("dashboard", "/partners/scopely/terms")).toBe(false);
     });
   });
 });

@@ -1,8 +1,16 @@
 # Deployment runbook
 
+The system is three deployables (`specs/2026-10-16-mini-app-split-design.md`):
+
+| Piece | Where | How it ships |
+|---|---|---|
+| Backend (this repo) | `neuronet-automations` `services/sla-dashboard/`, deployed as the `sla-dashboard` and (once registered) `sla-ingestion` Cloud Run services | PR to `neuronet-automations`, registry-driven deploy |
+| Frontend | `xsolla/mini-apps` `apps/sla-tracking`, served at https://prototype.xsolla.dev/mini-apps/sla-tracking | versioned branch `mini-apps/sla-tracking-vX.Y.Z`, auto-merge, CD to GCS |
+| Proxy registration | `xsolla/all-the-things` `config/mini-app-backends.json` and `config/mini-app-access.json` | one PR; merging deploys ATT production |
+
 This app is deployed as **two Cloud Run services built from one source directory**, selected
 at startup by `SERVICE_ROLE`. There is no path-based split: Cloud Run ingress is per service, so
-the dashboard and the ingestion endpoints must be different services with different ingress
+the API and the ingestion endpoints must be different services with different ingress
 settings (design §1 "Deployment").
 
 A missing or unrecognised `SERVICE_ROLE` stops the app at startup (`src/instrumentation.ts`,
@@ -53,14 +61,23 @@ nothing would then keep them identical.
 
 ## Service: `sla-dashboard`
 
-- **Ingress:** `internal-and-cloud-load-balancing`. Requires authentication (`allow_unauthenticated: false`); the only
-  invoker is the runtime service account, which `sla-ingestion` and the alert job both use.
+The API backend of the `sla-tracking` mini-app. It serves route handlers only (`/api/sla/pages/*`,
+contract terms, `/api/internal/alerts/run`); `/` and every non-API path are 404.
+
+- **Ingress:** `all`, `allow_unauthenticated: false`. Invocation is locked by Cloud Run IAM to two
+  accounts: the mini-app host proxy `att-prototype-vm@automation-experiments-456100.iam.gserviceaccount.com`
+  (every request from the frontend; the proxy checks the Okta session, strips cookies, and adds an
+  OIDC token and `X-Forwarded-User`) and the runtime service account, which `sla-ingestion` and the
+  alert job use for `/api/internal/alerts/run`. No load balancer, no IAP: this is how every mini-app
+  backend in the registry is reached.
 - **Environment:**
   - `SERVICE_ROLE=dashboard` — plain env var, not a secret
   - `VIEWER_ROLE` — `business`, `technical`, or `system` (`src/feed/viewer.ts`); plain env var,
-    not a secret — it's a stand-in for real session/SSO handling (main spec AD-5)
+    not a secret — the default for `/api/sla/feed`, `/api/sla/health` and the alert job; the page
+    endpoints take the mini-app's `?view=` preference first (main spec AD-5)
   - `DATABASE_URL` — connects as `sla_tracking_app_user` (SELECT on `sla_outages`, `sla_pir_reviews`,
-    `sla_outage_corrections`; SELECT/INSERT/UPDATE on `sla_alert_state` — main spec §5.1)
+    `sla_outage_corrections`; SELECT/INSERT/UPDATE on `sla_alert_state` — main spec §5.1). The live
+    registry reads it from the Infra-owned secret `sla_tracking_app_user_database_url`
   - `INTERNAL_SHARED_SECRET` — checked on `/api/internal/alerts/run` against the
     `x-internal-secret` header
   - `SLACK_BOT_TOKEN`
@@ -77,21 +94,24 @@ services:
     service_account: neuronet-j-patel@xsolla-n8n-prod.iam.gserviceaccount.com
     source: services/sla-dashboard/
     port: 8080
-    ingress: internal-and-cloud-load-balancing
+    ingress: all
     allow_unauthenticated: false
     iam_invokers:
+      - serviceAccount:att-prototype-vm@automation-experiments-456100.iam.gserviceaccount.com
       - serviceAccount:neuronet-j-patel@xsolla-n8n-prod.iam.gserviceaccount.com
+    cloudsql_instances:
+      - gcp-xsolla:us-west2:gcp-pgsql-common-prod-01
     env:
       SERVICE_ROLE: dashboard
       VIEWER_ROLE: <business|technical|system>
     secrets:
-      - neuronet_user_j_patel_sla_database_url
+      - sla_tracking_app_user_database_url
       - neuronet_user_j_patel_sla_internal_shared_secret
       - neuronet_user_j_patel_sla_slack_bot_token
       - neuronet_user_j_patel_sla_slack_channel_legal
       - neuronet_user_j_patel_sla_slack_channel_engineer
     secrets_env:
-      DATABASE_URL: neuronet_user_j_patel_sla_database_url
+      DATABASE_URL: sla_tracking_app_user_database_url
       INTERNAL_SHARED_SECRET: neuronet_user_j_patel_sla_internal_shared_secret
       SLACK_BOT_TOKEN: neuronet_user_j_patel_sla_slack_bot_token
       SLACK_CHANNEL_LEGAL: neuronet_user_j_patel_sla_slack_channel_legal
@@ -143,7 +163,7 @@ services:
     region: us-west2
     owner: j-patel
     service_account: neuronet-j-patel@xsolla-n8n-prod.iam.gserviceaccount.com
-    source: services/sla-app/
+    source: services/sla-dashboard/
     port: 8080
     ingress: all
     allow_unauthenticated: true
@@ -246,6 +266,28 @@ secret names above are proposals; use whatever names onboarding creates.
    ```
 
    Both must return `t`.
+
+## Mini-app frontend: `xsolla/mini-apps` `apps/sla-tracking`
+
+The React UI. It never sees a Cloud Run URL: every call goes to `/api/mini-app-proxy/sla-tracking/api/sla/...`
+on the host, and the host proxies it to `sla-dashboard`.
+
+- **Ship a change:** cut `mini-apps/sla-tracking-vX.Y.Z` from fresh `origin/main` in the mini-apps repo
+  with the matching version in `apps/sla-tracking/package.json`, change only `apps/sla-tracking/**`,
+  run `npx tsc -b && pnpm build && pnpm test`, open the PR (a new app's PR body carries the
+  `### QA evidence` block), let CI auto-merge, then watch `cd.yml` upload the bundle to GCS and register
+  the version. Verify at https://prototype.xsolla.dev/mini-apps/sla-tracking.
+- **Register the backend once** (and again if the service URL changes) in `xsolla/all-the-things`:
+  `config/mini-app-backends.json` → `"sla-tracking": { "url": "<the URL gcloud run services describe
+  sla-dashboard reports>", "timeout": 60000 }`; `config/mini-app-access.json` → `"sla-tracking": { "mode":
+  "everyone" }`. Merging a `config/` change deploys ATT production. Verify with a signed-in request to
+  `https://prototype.xsolla.dev/api/mini-app-proxy/sla-tracking/api/sla/pages/overview`: a JSON 404
+  `Unknown backend` means the entry has not shipped.
+- **Local development:** run this repo with `SERVICE_ROLE=dashboard` (`pnpm dev`, :3000), then `pnpm dev` in
+  `apps/sla-tracking` (:5173). Its Vite config proxies `/api/mini-app-proxy/sla-tracking` to
+  `SLA_BACKEND_URL` (default `http://localhost:3000`) and sets `x-forwarded-user` from `SLA_LOCAL_USER`.
+- **Types:** `apps/sla-tracking/src/api/types.ts` is a hand copy of the envelope types; the committed
+  samples under `tests/app/fixtures/pages/` here are the contract.
 
 ## Scheduled alert run: `jobs/sla-alert-run`
 
@@ -356,9 +398,10 @@ the Neuronet deployment path:
    (see **Database**).
 3. Import the historical spreadsheet with `source = 'backfill'`. This is a manual import — no
    script was planned for it.
-4. Open the PR to `xsolla/neuronet-automations` with `services/sla-app/`, the two `services:`
+4. Open the PR to `xsolla/neuronet-automations` with `services/sla-dashboard/`, the two `services:`
    entries, and `jobs/sla-alert-run/` with its `jobs:` entry. After review and merge, CI
    deploys all three. Fill in `DASHBOARD_INTERNAL_URL` once `sla-dashboard` has a URL.
+   (`sla-dashboard` and the job are live as of 2026-10-16; `sla-ingestion` is still to be registered.)
 5. Set the Slack app's Interactivity Request URL to `<sla-ingestion-url>/api/slack/interactions`,
    and invite the bot to `C0BUT8U637Y`.
 6. Point the Jira Automation webhook at `/api/ingest/pir-approved` with body
@@ -378,13 +421,20 @@ the Neuronet deployment path:
    - (d) the alert run fires once after the capture and again after the correction.
 
    Do not consider ingestion live until all four checks pass.
+9. Register the backend with the mini-app host (`xsolla/all-the-things`, see **Mini-app frontend**).
+10. Release the mini-app (`xsolla/mini-apps` `apps/sla-tracking`) and verify it at
+    https://prototype.xsolla.dev/mini-apps/sla-tracking: all five views, the Engineer / Business
+    toggle, a contract terms save whose `updated_by` is the Okta email, a backtest within 60 s.
+11. Sync this repo into `services/sla-dashboard/` again after any backend change; a stale copy
+    deploys old code silently.
 
 ## Open question
 
-**OQ-4 (main spec §14) is still open:** the Cloud SQL connection method from Cloud Run (Direct
-VPC egress vs. the Cloud SQL connector) for `sla-dashboard`'s and `sla-ingestion`'s database
-connections, and how `sla-dashboard` sits behind corporate SSO, are not yet decided. The
-registry supports both connection methods (`cloudsql_instances`, or `vpc_network`/`vpc_subnet`),
-but the entries above set neither for the database, and `allow_unauthenticated: false` on
-`sla-dashboard` is IAM-level only — it is not a substitute for SSO. Resolve OQ-4 before relying
-on this runbook for a production cutover.
+**OQ-4 (main spec §14), the connection half, is still open:** the services run in
+`xsolla-n8n-prod` and the database is `gcp-xsolla:us-west2:gcp-pgsql-common-prod-01`. The
+`sla-dashboard` entry uses the Cloud SQL connector (`cloudsql_instances`), which needs
+`roles/cloudsql.client` for the runtime account in `gcp-xsolla`; Direct VPC egress
+(`vpc_network`/`vpc_subnet`/`vpc_egress`) to the instance's private IP is the alternative and needs
+peering between the projects. Decide with Infra, apply the same choice to `sla-ingestion`, and
+verify with `sla-alert-run` and a test PIR. The SSO half closed on 2026-10-16: the mini-app host's
+Okta session, with `sla-dashboard` reachable only through its proxy.
