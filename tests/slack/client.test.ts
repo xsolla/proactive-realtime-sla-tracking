@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { callSlack, openView, postMessage, updateMessage } from "@/slack/client";
 
-const TOKEN = "xoxb-test-token";
+const TOKEN = "fake-slack-bot-token";
 
 function jsonResponse(body: unknown, status = 200, headers?: HeadersInit): Response {
   return new Response(JSON.stringify(body), { status, headers });

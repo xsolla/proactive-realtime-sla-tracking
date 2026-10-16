@@ -61,7 +61,7 @@ function makeDeps(testDb: TestDatabase, overrides: Partial<InteractionDeps> = {}
     updateMessage: vi.fn().mockResolvedValue({ ok: true }),
     triggerAlerts: vi.fn().mockResolvedValue({ ok: true }),
     now: () => T1,
-    config: { slackToken: "xoxb-test" },
+    config: { slackToken: "fake-slack-bot" },
     log: (msg: string) => logs.push(msg),
     ...overrides,
   };
@@ -153,7 +153,7 @@ describe("handleSlackInteraction", () => {
     expect(result.body).toBeNull();
     expect(deps.openView).toHaveBeenCalledTimes(1);
     const call = (deps.openView as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(call.token).toBe("xoxb-test");
+    expect(call.token).toBe("fake-slack-bot");
     expect(call.triggerId).toBe("trigger-1");
     expect(JSON.parse(call.view.private_metadata)).toEqual({ pirKey: "GTO-543", version: 0 });
   });
