@@ -423,7 +423,7 @@ In the technical view, each partner offers **Add contract terms** when none exis
 
 Validation is the loader's validation (§6.3), run on the server before anything is saved. **Save draft** and **Activate** are separate actions. Every save increments the version. The form carries the version it opened with, and a save against a newer version is refused, so two editors can't overwrite each other unnoticed.
 
-**Who changed it.** The dashboard has no sign-in yet, so every save requires an editor name, stored as `updated_by` on the row. This is weak, since it is typed rather than verified, and is replaced by the signed-in identity once the dashboard sits behind SSO (open question 4).
+**Who changed it.** Every save records `updated_by` from the Okta identity the mini-app host proxy forwards as `X-Forwarded-User` (design 2026-10-16 §2). The form carries no editor name. A production save without the header did not come through the proxy and is refused with 401; outside production a dev stand-in applies. Revised 2026-10-16: until then the name was typed, not verified.
 
 The routes live on `sla-dashboard` only; `sla-ingestion`'s deny-by-default proxy returns 404 for them.
 
