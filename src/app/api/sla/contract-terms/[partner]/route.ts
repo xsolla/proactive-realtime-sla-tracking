@@ -6,6 +6,7 @@ import {
   saveContractTerms,
   type ContractTermsBody,
 } from "@/data";
+import { writerIdentity } from "@/app/api/forwarded-user";
 import { isPartnerId, type ServiceId } from "@/registry";
 import {
   fieldForLoadMessage,
@@ -65,6 +66,12 @@ export async function PUT(
   if (!isPartnerId(partner)) {
     return json({ kind: "not_found" }, 404);
   }
+  // The editor is the Okta identity the host proxy forwards (main spec §6.6). A production
+  // request without it did not come through the proxy and is refused before the body is read.
+  const updatedBy = writerIdentity(request);
+  if (updatedBy === null) {
+    return json({ kind: "unauthorized" }, 401);
+  }
 
   let payload: unknown;
   try {
@@ -78,7 +85,7 @@ export async function PUT(
     return invalid(parsed.errors);
   }
 
-  const review = reviewStoredTerms(partner, parsed.lifecycle, parsed.terms, parsed.updatedBy);
+  const review = reviewStoredTerms(partner, parsed.lifecycle, parsed.terms);
   if (review.errors.length > 0) {
     return invalid(review.errors);
   }
@@ -89,7 +96,7 @@ export async function PUT(
       partner,
       parsed.terms,
       parsed.lifecycle,
-      parsed.updatedBy,
+      updatedBy,
       parsed.expectedVersion,
     );
     if (result.kind === "conflict") {
@@ -106,7 +113,6 @@ type ParsedSave = {
   ok: true;
   expectedVersion: number | null;
   lifecycle: "terms_pending_review" | "contract_bound";
-  updatedBy: string;
   terms: ContractTermsBody;
 };
 
@@ -117,15 +123,11 @@ function parseSaveBody(payload: unknown): ParsedSave | { ok: false; errors: Fiel
   const errors: FieldIssue[] = [];
   const expectedVersion = parseExpectedVersion(payload.expectedVersion, errors);
   const lifecycle = parseLifecycle(payload.lifecycle, errors);
-  const updatedBy = typeof payload.updatedBy === "string" ? payload.updatedBy : "";
-  if (typeof payload.updatedBy !== "string") {
-    errors.push({ field: "updatedBy", message: "Enter your name." });
-  }
   const terms = parseTerms(payload.terms, errors);
   if (expectedVersion === undefined || lifecycle === undefined || terms === undefined || errors.length > 0) {
     return { ok: false, errors };
   }
-  return { ok: true, expectedVersion, lifecycle, updatedBy, terms };
+  return { ok: true, expectedVersion, lifecycle, terms };
 }
 
 function parseExpectedVersion(value: unknown, errors: FieldIssue[]): number | null | undefined {

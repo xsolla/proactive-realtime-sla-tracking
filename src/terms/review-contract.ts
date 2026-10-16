@@ -108,13 +108,9 @@ export function reviewStoredTerms(
   partner: PartnerId,
   lifecycle: ContractFile["lifecycle"],
   terms: ContractTermsBody,
-  updatedBy: string,
 ): ContractReview {
   const errors: FieldIssue[] = [];
   const warnings: FieldIssue[] = [];
-  if (updatedBy.trim() === "") {
-    pushError(errors, "updatedBy", "Enter your name.");
-  }
   if (!Array.isArray(terms.scopes) || terms.scopes.length === 0) {
     pushError(errors, "scopes", "Add at least one scope.");
   }
@@ -168,7 +164,6 @@ export type ContractFormState = {
   effectiveTo: string;
   contractAggregateCap: string;
   scopes: ContractFormScope[];
-  updatedBy: string;
   expectedVersion: number | null;
 };
 
@@ -192,7 +187,6 @@ export function emptyContractForm(): ContractFormState {
     effectiveTo: "",
     contractAggregateCap: "",
     scopes: [emptyScope("scope-1")],
-    updatedBy: "",
     expectedVersion: null,
   };
 }
@@ -255,9 +249,6 @@ export function reviewContractForm(partner: PartnerId, form: ContractFormState):
   const errors: FieldIssue[] = [];
   const warnings: FieldIssue[] = [];
 
-  if (form.updatedBy.trim() === "") {
-    pushError(errors, "updatedBy", "Enter your name.");
-  }
   if (form.effectiveFrom.trim() === "") {
     pushError(errors, "effectiveFrom", "Effective from is required.");
   } else {
@@ -285,7 +276,7 @@ export function reviewContractForm(partner: PartnerId, form: ContractFormState):
 
   const terms = contractBodyFromForm(form);
   if (terms !== null) {
-    const stored = reviewStoredTerms(partner, "terms_pending_review", terms, form.updatedBy);
+    const stored = reviewStoredTerms(partner, "terms_pending_review", terms);
     for (const error of stored.errors) {
       pushError(errors, error.field, error.message);
     }

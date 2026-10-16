@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { forwardedUser } from "@/app/api/forwarded-user";
 
 /**
  * Shared by the page routes the mini-app reads. Every response is no-store
@@ -21,16 +22,6 @@ export function pageQuery(request: Request): URLSearchParams {
 export function param(query: URLSearchParams, name: string): string | undefined {
   const value = query.get(name);
   return value === null || value === "" ? undefined : value;
-}
-
-/**
- * The Okta identity the mini-app host proxy forwards, lowercased. Null when
- * the request did not come through the proxy (the Vite dev proxy sets it;
- * a direct call from the job or a test does not).
- */
-export function forwardedUser(request: Request): string | null {
-  const value = request.headers.get("x-forwarded-user")?.trim().toLowerCase();
-  return value === undefined || value === "" ? null : value;
 }
 
 /** One line per page read, so who looked at what is in the service log. */

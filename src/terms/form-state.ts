@@ -7,7 +7,6 @@ export function formStateFromTerms(terms: ContractFile, version: number): Contra
     effectiveTo: terms.effectiveTo ?? "",
     contractAggregateCap: terms.contractAggregateCap === null ? "" : String(terms.contractAggregateCap),
     scopes: terms.scopes.map(scopeFromStored),
-    updatedBy: "",
     expectedVersion: version,
   };
 }

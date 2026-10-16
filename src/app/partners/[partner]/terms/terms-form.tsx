@@ -103,7 +103,6 @@ export function TermsForm({
         body: JSON.stringify({
           expectedVersion: form.expectedVersion,
           lifecycle,
-          updatedBy: form.updatedBy,
           terms,
         }),
       });
@@ -268,21 +267,6 @@ export function TermsForm({
           Add scope
         </Button>
       </div>
-
-      <Field label="Your name" htmlFor="updated-by" field="updatedBy" error={message("updatedBy")}>
-        <TextInput
-          id="updated-by"
-          type="text"
-          autoComplete="name"
-          value={form.updatedBy}
-          {...described("updated-by", message("updatedBy"))}
-          onChange={(event) => {
-            const value = event.target.value;
-            edit(["updatedBy"], (current) => ({ ...current, updatedBy: value }));
-          }}
-        />
-      </Field>
-      <p className="text-sm text-muted-foreground">Your name is recorded with this save.</p>
 
       {submitAttempted && review.errors.length > 0 ? (
         <p className="text-sm text-danger" role="alert" data-save-errors>
