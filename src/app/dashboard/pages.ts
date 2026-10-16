@@ -1,5 +1,6 @@
 import type { ContractTermsRow } from "@/data";
 import { partnerLabel } from "@/feed";
+import { formatUtcTimestamp } from "./copy";
 import { SERVICES, type PartnerId } from "@/registry";
 import { emptyContractForm, formStateFromTerms, type ContractFile, type ContractFormState } from "@/terms";
 import { buildAlertsView, type AlertsView } from "./alerts-view";
@@ -29,7 +30,16 @@ export type PageEnvelope<T> = {
 };
 export type PartnerEnvelope = PageEnvelope<PartnerPageView> & { backtest: BacktestPanel | null };
 export type HealthPageView = { health: HealthView | { status: "error" }; unusable: UnusableRowView[] | null };
-export type TermsRowView = { lifecycle: string; version: number; updatedBy: string; updatedAt: string; terms: ContractFile };
+export type TermsRowView = {
+  lifecycle: string;
+  version: number;
+  updatedBy: string;
+  /** ISO-8601. */
+  updatedAt: string;
+  /** `updatedAt` as the UI prints it. */
+  updatedAtLabel: string;
+  terms: ContractFile;
+};
 export type TermsPageView = {
   partner: string;
   partnerName: string;
@@ -130,7 +140,14 @@ export function termsPage(workspace: Workspace, partner: PartnerId, row: Contrac
     row:
       row === null
         ? null
-        : { lifecycle: row.lifecycle, version: row.version, updatedBy: row.updatedBy, updatedAt: row.updatedAt.toISOString(), terms: row.terms },
+        : {
+            lifecycle: row.lifecycle,
+            version: row.version,
+            updatedBy: row.updatedBy,
+            updatedAt: row.updatedAt.toISOString(),
+            updatedAtLabel: formatUtcTimestamp(row.updatedAt.toISOString()),
+            terms: row.terms,
+          },
     initial: row === null ? emptyContractForm() : formStateFromTerms(row.terms, row.version),
     services: serviceOptions,
   };

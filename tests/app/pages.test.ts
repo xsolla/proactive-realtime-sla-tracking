@@ -168,7 +168,7 @@ describe("page envelopes", () => {
     const page = termsPage(technical(), "scopely", termsRow);
     expect(page?.showWindow).toBe(false);
     expect(page?.breadcrumb.map((crumb) => crumb.label)).toEqual(["Overview", "Scopely", "Contract terms"]);
-    expect(page?.view.row).toMatchObject({ lifecycle: "contract_bound", version: 3, updatedBy: "j.patel@xsolla.com", updatedAt: "2026-09-10T12:00:00.000Z" });
+    expect(page?.view.row).toMatchObject({ lifecycle: "contract_bound", version: 3, updatedBy: "j.patel@xsolla.com", updatedAt: "2026-09-10T12:00:00.000Z", updatedAtLabel: "2026-09-10 12:00:00 UTC" });
     expect(page?.view.initial.expectedVersion).toBe(3);
     expect(page?.view.initial.scopes[0]).toMatchObject({ scopeId: "payments", kind: "service", services: ["payments"], target: "99.95", penaltyKind: "tiers" });
     expect(page?.view.services.map((service) => service.displayName)).toEqual([...(page?.view.services ?? [])].map((service) => service.displayName).sort((left, right) => left.localeCompare(right)));
