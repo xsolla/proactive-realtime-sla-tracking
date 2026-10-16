@@ -136,7 +136,7 @@ describe("term table expander", () => {
   it("renders the PIR key as a link only for an https ticket URL, and the severity without an em dash", () => {
     const linked = termsFor([boundaryOutage], 30)[0]?.outages ?? [];
     expect(linked[0]?.severity).toBe("L1 · Critical");
-    const linkedHtml = renderToStaticMarkup(<OutageLines outages={linked} />);
+    const linkedHtml = renderToStaticMarkup(<OutageLines outages={linked} reconciliation="" />);
     expect(linkedHtml).toContain('href="https://jira.example/browse/GTO-543"');
     expect(linkedHtml).toContain('rel="noopener noreferrer"');
     expect(linkedHtml).toContain("L1 · Critical");
@@ -147,7 +147,7 @@ describe("term table expander", () => {
     expect(linkedHtml).not.toContain("Source");
 
     const plain = termsFor([{ ...boundaryOutage, pirKey: "GTO-100", pirUrl: null, source: "pipeline" }], 30)[0]?.outages ?? [];
-    const plainHtml = renderToStaticMarkup(<OutageLines outages={plain} />);
+    const plainHtml = renderToStaticMarkup(<OutageLines outages={plain} reconciliation="" />);
     expect(plainHtml).toContain("GTO-100");
     expect(plainHtml).toContain("no ticket link");
     expect(plainHtml).not.toContain("<a ");

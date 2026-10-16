@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
-import { reconciliationText } from "./copy";
 import type { OutageView } from "./model";
 
 export function OutageLines({
   outages,
+  reconciliation,
   serviceCaption = "Service",
 }: {
   outages: readonly OutageView[];
+  /** The reconciliation sentence from the row's view model. */
+  reconciliation: string;
   serviceCaption?: string;
 }) {
   const groups = groupOutages(outages);
@@ -34,7 +36,7 @@ export function OutageLines({
           </div>
         );
       })}
-      <p className="text-sm text-muted-foreground">{reconciliationText(outages)}</p>
+      <p className="text-sm text-muted-foreground">{reconciliation}</p>
     </div>
   );
 }

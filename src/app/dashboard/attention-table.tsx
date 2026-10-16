@@ -1,5 +1,5 @@
 import { BudgetBar, StatusBadge, Table, TableBody, TableHead, TableHeaderCell } from "@/ui";
-import { NO_ATTENTION, statusLabel } from "./copy";
+import { NO_ATTENTION } from "./copy";
 import type { AttentionRow } from "./overview";
 
 export const badgeVariant = { meeting: "success", at_risk: "warning", breached: "danger" } as const;
@@ -29,7 +29,7 @@ export function AttentionTable({ rows, failure }: { rows: readonly AttentionRow[
               <a href={row.href} className="text-sm font-medium text-link underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{row.partnerName}</a>
               <p className="text-xs text-muted-foreground">{row.term.title}</p>
             </td>
-            <td className="px-3 py-3 text-center align-top"><StatusBadge variant={badgeVariant[row.term.status]} label={statusLabel(row.term.status)} /></td>
+            <td className="px-3 py-3 text-center align-top"><StatusBadge variant={badgeVariant[row.term.status]} label={row.term.statusLabel} /></td>
             <td className="px-3 py-3 text-center align-top font-mono text-sm tabular-nums">
               {row.term.target} / <span className={row.term.status === "breached" ? "text-danger" : "text-warning"}>{row.term.actual}</span>
               {row.term.actualCaption === null ? null : <span className="block text-xs text-muted-foreground">{row.term.actualCaption}</span>}

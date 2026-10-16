@@ -13,7 +13,7 @@ import {
   type UnusableRow,
   type Viewer,
 } from "@/feed";
-import { QUERY_FAILED, VIEWER_UNCONFIGURED, formatUtcTimestamp, monthTitle } from "./copy";
+import { QUERY_FAILED, VIEWER_UNCONFIGURED, formatUtcTimestamp, monthTitle, phaseLabel } from "./copy";
 import {
   backtestErrorPanel,
   buildHealth,
@@ -32,6 +32,8 @@ export type Frame = {
   windowKey: string;
   windowTitle: string;
   phase: "open" | "settled";
+  /** The phase as the UI prints it. */
+  phaseLabel: string;
   months: MonthOption[];
   asOfLabel: string;
 };
@@ -71,6 +73,7 @@ export async function loadWorkspace(
     windowKey: resolved.key,
     windowTitle: monthTitle(resolved.key),
     phase,
+    phaseLabel: phaseLabel(phase),
     months: buildMonthOptions(asOf, resolved.key, input.windowPath),
     asOfLabel: formatUtcTimestamp(asOf.toISOString()),
   };

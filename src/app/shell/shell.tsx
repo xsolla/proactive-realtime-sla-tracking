@@ -8,6 +8,7 @@ export type ShellFrame = {
   windowKey: string;
   windowTitle: string;
   phase: "open" | "settled";
+  phaseLabel: string;
   months: MonthOption[];
   asOfLabel: string;
   view: { active: "technical" | "business" };

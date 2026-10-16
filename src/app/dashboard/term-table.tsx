@@ -1,6 +1,6 @@
 import { BudgetBar, Caret, StatusBadge, Table, TableBody, TableHead } from "@/ui";
 import { badgeVariant, budgetTone } from "./attention-table";
-import { FILED_AGAINST, statusLabel } from "./copy";
+import { FILED_AGAINST } from "./copy";
 import { OutageLines } from "./outage-lines";
 import { WindowTrend } from "./trend-sparkline";
 import type { TermView } from "./view";
@@ -22,7 +22,7 @@ function Facts({ term }: { term: TermView }) {
         <span className="block text-sm font-medium text-foreground">{term.title}</span>
         <span className="block font-mono text-xs text-muted-foreground">{term.downLine}</span>
       </span>
-      <span><StatusBadge variant={badgeVariant[term.status]} label={statusLabel(term.status)} /></span>
+      <span><StatusBadge variant={badgeVariant[term.status]} label={term.statusLabel} /></span>
       <span className="font-mono text-sm tabular-nums">
         {term.target} / <span className={actualTone}>{term.actual}</span>
         {term.actualCaption === null ? null : <span className="block text-xs text-muted-foreground">{term.actualCaption}</span>}
@@ -66,7 +66,7 @@ export function TermTable({ partnerName, terms }: { partnerName: string; terms: 
                     </summary>
                     <div id={panelId} className="flex flex-col gap-3 border-t border-border bg-muted p-3">
                       <WindowTrend trend={term.trend} status={term.status} />
-                      {outages === null ? null : <OutageLines outages={outages} serviceCaption={FILED_AGAINST} />}
+                      {outages === null ? null : <OutageLines outages={outages} reconciliation={term.reconciliation} serviceCaption={FILED_AGAINST} />}
                     </div>
                   </details>
                 </td>

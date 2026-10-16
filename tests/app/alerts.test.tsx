@@ -8,8 +8,8 @@ import { buildTechnicalPartners } from "@/app/dashboard/view";
 import { scoredRow } from "../support/rows";
 
 const months = [
-  { key: "2026-09", title: "September 2026", phase: "open" as const, href: "/alerts?window=2026-09", selected: true },
-  { key: "2026-08", title: "August 2026", phase: "settled" as const, href: "/alerts?window=2026-08", selected: false },
+  { key: "2026-09", title: "September 2026", phase: "open" as const, phaseLabel: "In progress", href: "/alerts?window=2026-09", selected: true },
+  { key: "2026-08", title: "August 2026", phase: "settled" as const, phaseLabel: "Settled", href: "/alerts?window=2026-08", selected: false },
 ];
 const at = (iso: string) => new Date(iso);
 const rows = [
@@ -67,7 +67,7 @@ describe("alerts page", () => {
   it("lists every month under All and writes the empty sentence for a quiet month", () => {
     const all = buildAlertsView({ alerts: rows, filterKey: "all", months, partners });
     expect(all.state === "ok" && all.rows).toHaveLength(4);
-    const quiet = buildAlertsView({ alerts: rows, filterKey: "2026-07", months: [...months, { key: "2026-07", title: "July 2026", phase: "settled", href: "/alerts?window=2026-07", selected: false }], partners });
+    const quiet = buildAlertsView({ alerts: rows, filterKey: "2026-07", months: [...months, { key: "2026-07", title: "July 2026", phase: "settled", phaseLabel: "Settled", href: "/alerts?window=2026-07", selected: false }], partners });
     expect(quiet.state === "ok" && quiet.empty).toBe("No alerts recorded for July 2026.");
     const html = renderToStaticMarkup(<AlertsPage view={quiet} />);
     expect(html).toContain("No alerts recorded for July 2026.");

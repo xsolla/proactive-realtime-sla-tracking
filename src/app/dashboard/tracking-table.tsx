@@ -47,7 +47,7 @@ export function TrackingTable({ partnerName, rows, unavailable = false }: { part
                       </summary>
                       <div id={panelId} className="flex flex-col gap-3 border-t border-border bg-muted p-3">
                         <WindowTrend trend={row.trend} status={null} />
-                        {outages === null ? null : <OutageLines outages={outages} />}
+                        {outages === null ? null : <OutageLines outages={outages} reconciliation={row.reconciliation} />}
                       </div>
                     </details>
                   )}

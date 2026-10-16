@@ -1,13 +1,17 @@
-import { BACKTEST_TRACKING_ONLY, CONTRACT_ON_FILE, MONTHLY_WINDOW, NO_TERMS, OUTSIDE_SCOPES, SETTLED_NOTE, TRACKING_ONLY_NOTE, UNAVAILABLE, VIEW_TERMS, formatMinutes } from "./copy";
+import { BACKTEST_TRACKING_ONLY, CONTRACT_ON_FILE, MONTHLY_WINDOW, NO_TERMS, OUTSIDE_SCOPES, SETTLED_NOTE, TRACKING_ONLY_NOTE, UNAVAILABLE, VIEW_TERMS, formatMinutes, statusLabel } from "./copy";
 import { termsLinkFor, type OverviewTile } from "./overview";
-import type { PartnerView, Status, TermView, TrackingView } from "./view";
+import { unavailableTrackingRow, type PartnerView, type Status, type TermView, type TrackingView } from "./view";
 
 export type PartnerPageView = {
   id: string;
   name: string;
   worst: Status | null;
+  /** The worst status as the UI prints it; null when there is no scored term. */
+  worstLabel: string | null;
   trackingOnly: boolean;
   unavailable: boolean;
+  /** The single error row the tracking table shows when the feed failed; null otherwise. */
+  unavailableRow: TrackingView | null;
   failure: string | null;
   /** Mono meta segments, e.g. ["Merchant ID 151639", "3 terms"]. The terms link is separate. */
   meta: string[];
@@ -62,8 +66,10 @@ export function buildPartnerPage(input: {
     id: partner.id,
     name: partner.name,
     worst: partner.worst,
+    worstLabel: partner.worst === null ? null : statusLabel(partner.worst),
     trackingOnly: partner.trackingOnly,
     unavailable: partner.unavailable,
+    unavailableRow: partner.unavailable ? unavailableTrackingRow(partner.id, input.windowKey) : null,
     failure: input.failure,
     meta,
     termsLink: termsLink === null ? null : termsLink.label === VIEW_TERMS ? { label: CONTRACT_ON_FILE, href: termsLink.href } : termsLink,

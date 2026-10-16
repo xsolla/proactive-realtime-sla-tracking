@@ -2,7 +2,9 @@ import { listPilotPartners, partnerLabel, partnerMerchantIds, scopeTitle, servic
 import type { BusinessCredit, BusinessRow, MonthHistory, TechnicalRow } from "@/feed";
 import {
   CLAUSE_NOT_RECORDED,
+  ROW_UNAVAILABLE,
   TO_DATE,
+  UNAVAILABLE,
   actualUptime,
   comparisonText,
   consumedText,
@@ -16,6 +18,7 @@ import {
   proratedWindowNote,
   reconciliationText,
   statusExplanation,
+  statusLabel,
   tierDistanceText,
 } from "./copy";
 import { toOutageViews, type OutageView } from "./outage-view";
@@ -29,6 +32,8 @@ export type TermView = {
   key: string;
   title: string;
   status: Status;
+  /** The status as the UI prints it; built here so the renderer never maps a status to a label. */
+  statusLabel: string;
   target: string;
   actual: string;
   actualCaption: string | null;
@@ -111,6 +116,22 @@ export function buildTrend(history: readonly MonthHistory[], windowKey: string, 
   return { bars, summary };
 }
 
+/** The one tracking row a partner page shows when the feed failed: every figure reads Unavailable, never zero. */
+export function unavailableTrackingRow(partnerId: string, windowKey: string): TrackingView {
+  return {
+    key: `${partnerId}:unavailable`,
+    service: UNAVAILABLE,
+    minutes: UNAVAILABLE,
+    incidents: UNAVAILABLE,
+    usedMinutes: 0,
+    outageCount: 0,
+    comparison: ROW_UNAVAILABLE,
+    trend: buildTrend([], windowKey, 0),
+    outages: null,
+    reconciliation: "",
+  };
+}
+
 function contractTermsState(id: string, index: TermsIndex): ContractTermsState {
   if (index === null) return "unknown";
   if (index.bound.has(id)) return "view";
@@ -160,6 +181,7 @@ function technicalTerm(
     key: `${row.partner}:${row.scopeId}`,
     title: scopeTitle(row),
     status: row.status,
+    statusLabel: statusLabel(row.status),
     target: formatUptime(row.target),
     ...uptimeFields({
       usedMinutes: row.usedMinutes,
@@ -219,6 +241,7 @@ function businessTerm(
     key: `${row.partnerId}:${row.scope}`,
     title: row.scope,
     status: row.status,
+    statusLabel: statusLabel(row.status),
     target: formatUptime(row.target),
     ...uptimeFields({ usedMinutes: used, windowMinutes: row.windowMinutes, elapsedMinutes: row.elapsedMinutes, phase }),
     allowed: formatMinutes(allowed),

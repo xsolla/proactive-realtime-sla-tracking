@@ -22,6 +22,8 @@ describe("partner page", () => {
       phase: "open", windowKey: "2026-09", failure: null, role: "technical",
     });
     expect(view.meta).toEqual(["Merchant ID 151639", "1 term"]);
+    expect(view.worstLabel).toBe("Breached");
+    expect(view.unavailableRow).toBeNull();
     expect(view.termsLink).toEqual({ label: CONTRACT_ON_FILE, href: "/partners/scopely/terms" });
     expect(view.tiles.map((tile) => `${tile.label}=${tile.value}`)).toEqual([
       "Covered services=1", "At risk=1 / 1", "Breached=1", "Downtime this window=76 min",
@@ -81,6 +83,9 @@ describe("partner page", () => {
     const failed = buildPartnerPage({ partner: unavailablePartners(null, "technical")[0]!, phase: "open", windowKey: "2026-09", failure: QUERY_FAILED, role: "technical" });
     const html = renderToStaticMarkup(<PartnerPageView view={failed} backtest={null} />);
     expect(html).toContain(QUERY_FAILED);
+    expect(failed.worstLabel).toBeNull();
+    expect(failed.unavailableRow).toMatchObject({ key: "scopely:unavailable", service: "Unavailable", minutes: "Unavailable", comparison: ROW_UNAVAILABLE, outages: null });
+    expect(failed.unavailableRow?.trend.bars.at(-1)).toEqual({ month: "2026-09", label: "September 2026", minutes: 0, current: true });
     expect(failed.tiles.every((tile) => tile.value === "Unavailable")).toBe(true);
     expect(html).not.toContain(">0<");
     expect(html.match(/>Unavailable</g)?.length ?? 0).toBeGreaterThanOrEqual(4);

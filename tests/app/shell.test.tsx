@@ -16,7 +16,8 @@ const frame = {
   windowKey: "2026-09",
   windowTitle: "September 2026",
   phase: "open" as const,
-  months: [{ key: "2026-09", title: "September 2026", phase: "open" as const, href: "/?window=2026-09", selected: true }],
+  phaseLabel: "In progress",
+  months: [{ key: "2026-09", title: "September 2026", phase: "open" as const, phaseLabel: "In progress", href: "/?window=2026-09", selected: true }],
   asOfLabel: "2026-09-23 15:58:00 UTC",
   view: { active: "technical" as const },
 };
@@ -125,6 +126,8 @@ describe("shell", () => {
   it("points the month menu at the current route, so a partner page keeps its path", () => {
     const months = buildMonthOptions(new Date("2026-09-23T15:58:00.000Z"), "2026-09", "/partners/scopely");
     expect(months[0]?.href).toBe("/partners/scopely?window=2026-09");
+    expect(months[0]?.phaseLabel).toBe("In progress");
+    expect(months[1]?.phaseLabel).toBe("Settled");
     expect(months.every((month) => month.href.startsWith("/partners/scopely?window="))).toBe(true);
     expect(buildMonthOptions(new Date("2026-09-23T15:58:00.000Z"), "2026-09")[0]?.href).toBe("/?window=2026-09");
     const nav = buildNav({ windowKey: "2026-09", role: "technical", partners: [partner("scopely", "Scopely")], alerts: { count: 0 }, health: { count: 0 }, active: { kind: "partner", id: "scopely" } });

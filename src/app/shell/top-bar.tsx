@@ -28,7 +28,7 @@ export function TopBar({
         ))}
       </ol>
       <div className="flex flex-wrap items-center gap-4">
-        {showWindow ? <WindowSelect months={frame.months} title={frame.windowTitle} phase={frame.phase} /> : null}
+        {showWindow ? <WindowSelect months={frame.months} title={frame.windowTitle} phaseLabel={frame.phaseLabel} /> : null}
         <p className="font-mono text-xs tabular-nums text-muted-foreground">as of {frame.asOfLabel}</p>
         <ViewToggle active={frame.view.active} windowKey={frame.windowKey} />
       </div>
