@@ -29,7 +29,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     phase: workspace.frame.phase,
     windowKey: workspace.frame.windowKey,
     failure: workspace.failure,
-    role: workspace.role,
   });
   return (
     <Shell nav={nav} frame={{ ...workspace.frame, view: workspace.view }} breadcrumb={[{ label: "Overview" }]}>

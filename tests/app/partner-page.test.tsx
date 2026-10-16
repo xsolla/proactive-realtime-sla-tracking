@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BACKTEST_FAILED, BACKTEST_TRACKING_ONLY, CLAUSE_NOT_RECORDED, FILED_AGAINST, CONTRACT_ON_FILE, NO_DOWNTIME, NO_TERMS, NO_TICKETS, OUTSIDE_SCOPES, QUERY_FAILED, ROW_UNAVAILABLE, SETTLED_NOTE, TRACKING_ONLY_NOTE, proratedWindowNote, tierDistanceText } from "@/app/dashboard/copy";
+import { BACKTEST_FAILED, BACKTEST_TRACKING_ONLY, CONTRACT_ON_FILE, NO_DOWNTIME, NO_TERMS, OUTSIDE_SCOPES, QUERY_FAILED, ROW_UNAVAILABLE, SETTLED_NOTE, TRACKING_ONLY_NOTE } from "@/app/dashboard/copy";
 import { toBacktestPanel } from "@/app/dashboard/model";
 import { buildPartnerPage } from "@/app/dashboard/partner-page";
 import { PartnerPageView } from "@/app/dashboard/partner-page-view";
@@ -36,10 +36,10 @@ describe("partner page", () => {
     expect(html).toContain("351.9% consumed");
     expect(html).toContain('href="https://jira.example/browse/GTO-600"');
     expect(html).toContain("GTO-601");
-    expect(html).toContain(CLAUSE_NOT_RECORDED);
     expect(html).toContain("<details");
     expect(html).toContain("Started");
-    expect(html).toContain("UPTIME · MONTHLY");
+    expect(html).not.toContain("Coverage terms");
+    expect(html).not.toContain("UPTIME · MONTHLY");
     expect(html).not.toContain("—");
   });
 
@@ -75,9 +75,9 @@ describe("partner page", () => {
     expect(html).toContain("99.915%");
   });
 
-  it("shows the empty tickets sentence and the failure state distinctly", () => {
+  it("shows the failure state without rendering coverage cards", () => {
     const empty = buildPartnerPage({ partner: technical([scoredRow({ outages: [], usedMinutes: 0 })]), phase: "open", windowKey: "2026-09", failure: null, role: "technical" });
-    expect(renderToStaticMarkup(<PartnerPageView view={empty} backtest={null} />)).toContain(NO_TICKETS);
+    expect(renderToStaticMarkup(<PartnerPageView view={empty} backtest={null} />)).not.toContain("Coverage terms");
     const failed = buildPartnerPage({ partner: unavailablePartners(null, "technical")[0]!, phase: "open", windowKey: "2026-09", failure: QUERY_FAILED, role: "technical" });
     const html = renderToStaticMarkup(<PartnerPageView view={failed} backtest={null} />);
     expect(html).toContain(QUERY_FAILED);
@@ -169,29 +169,4 @@ describe("partner page", () => {
     expect(html.toLowerCase()).not.toContain("final");
   });
 
-  it("renders next tier, prorated window start, a real zero credit, and the filed-against caption", () => {
-    const windowStart = "2026-09-15T00:00:00.000Z";
-    const view = buildPartnerPage({
-      partner: technical([scoredRow({
-        status: "breached",
-        nextTierStartsAfterMinutes: 216,
-        windowStart,
-        penalty: {
-          incurred: { kind: "credit", creditFraction: 0, amount: null },
-          projected: { kind: "credit", creditFraction: 0.05, amount: null },
-        },
-      })]),
-      phase: "open", windowKey: "2026-09", failure: null, role: "technical",
-    });
-    const html = renderToStaticMarkup(<PartnerPageView view={view} backtest={null} />);
-    const cards = html.slice(html.indexOf("Coverage terms"));
-    expect(cards).toContain("Breached");
-    expect(cards).toMatch(new RegExp(`Next tier</dt><dd[^>]*>${tierDistanceText(76, 216)}</dd>`));
-    expect(cards).toContain(tierDistanceText(76, 216));
-    expect(proratedWindowNote(windowStart)).not.toBeNull();
-    expect(cards).toMatch(new RegExp(`Window start</dt><dd[^>]*>${proratedWindowNote(windowStart)}</dd>`));
-    expect(cards).toMatch(/Credit incurred<\/dt><dd[^>]*>0%<\/dd>/);
-    expect(cards).toMatch(/Credit projected<\/dt><dd[^>]*>5%<\/dd>/);
-    expect(html).toContain(`>${FILED_AGAINST}</dt>`);
-  });
 });

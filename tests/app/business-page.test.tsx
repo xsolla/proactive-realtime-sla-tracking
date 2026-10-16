@@ -25,7 +25,7 @@ describe("business role", () => {
     const frame = { windowKey: WINDOW_KEY, windowTitle: "April 2026", phase: "open" as const, months: [], asOfLabel: "2026-04-20 00:00:00 UTC", view: { active: "business" as const } };
     const overview = renderToStaticMarkup(
       <Shell nav={nav} frame={frame} breadcrumb={[{ label: "Overview" }]}>
-        <OverviewPage view={buildOverview({ partners, phase: "open", windowKey: WINDOW_KEY, failure: null, role: "business" })} />
+        <OverviewPage view={buildOverview({ partners, phase: "open", windowKey: WINDOW_KEY, failure: null })} />
       </Shell>,
     );
     const scopely = partners.find((partner) => partner.id === "scopely")!;
@@ -38,7 +38,9 @@ describe("business role", () => {
       expect(overview, sentinel).not.toContain(sentinel);
       expect(page, sentinel).not.toContain(sentinel);
     }
-    expect(page).toContain("Target uptime");
+    expect(page).toContain("Target / Actual");
+    expect(page).toContain("Incident Ticket Reference");
+    expect(page).not.toContain("Coverage terms");
     expect(page).toContain("Window trend");
     expect(overview).toContain("Scopely");
   });

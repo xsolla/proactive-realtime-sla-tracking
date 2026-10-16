@@ -514,10 +514,9 @@ The level trigger exists because projection stops being informative late in a wi
 
 ```ts
 // engine/constants.ts
-// PROVISIONAL — engineering estimates, not agreed policy.
-// Calibrate against historical replay (GTOC-42) before enabling alerts.
+// Calibrated 2026-10-07 against historical replay (GTOC-42).
 export const MIN_ELAPSED = 0.2
-export const MIN_CONSUMPTION = 0.1
+export const MIN_CONSUMPTION = 0.5
 export const HIGH_CONSUMPTION = 0.75
 export const WINDOW_TIMEZONE = 'UTC'
 ```

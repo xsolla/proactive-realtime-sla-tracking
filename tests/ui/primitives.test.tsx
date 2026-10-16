@@ -21,6 +21,25 @@ describe("ui primitives", () => {
     expect(html).not.toContain("border-danger");
   });
 
+  it("renders accessible, click-focusable help next to a tile label", () => {
+    const html = renderToStaticMarkup(
+      <Tile
+        label="At risk"
+        value="1"
+        help={"At risk triggers before a breach.\nTrend: projected to exceed the allowance."}
+      />,
+    );
+    expect(html).toContain('aria-label="How At risk is calculated"');
+    expect(html).toContain('role="tooltip"');
+    expect(html).toContain("At risk triggers before a breach.");
+    expect(html).toContain("Trend: projected to exceed the allowance.");
+    expect(html).toContain("whitespace-pre-line");
+    expect(html).toContain("left-full");
+    expect(html).toContain("top-full");
+    expect(html).toContain("ml-2");
+    expect(html).toContain("mt-2");
+  });
+
   it("draws one rect per known month, none for a gap, and a title per bar", () => {
     const html = renderToStaticMarkup(
       <Sparkline

@@ -66,14 +66,17 @@ export function TableCell({
 export function TableHeaderCell({
   children,
   numeric = false,
+  align,
 }: {
   children: ReactNode;
   numeric?: boolean;
+  align?: "left" | "center" | "right";
 }) {
+  const textAlign = align ?? (numeric ? "right" : "left");
   return (
     <th
       scope="col"
-      className={`px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground ${numeric ? "text-right font-mono tabular-nums" : "text-left"}`}
+      className={`px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground ${textAlign === "center" ? "text-center" : textAlign === "right" ? "text-right" : "text-left"} ${numeric ? "font-mono tabular-nums" : ""}`}
     >
       {children}
     </th>

@@ -1,7 +1,6 @@
 import { Button, Chip, StatusBadge, Tile, Tooltip } from "@/ui";
 import { badgeVariant } from "./attention-table";
 import { BacktestPanel } from "./backtest-panel";
-import { CoverageCards } from "./coverage-cards";
 import { NO_DOWNTIME, ROW_UNAVAILABLE, TRACKING_ONLY_LABEL, UNAVAILABLE, statusLabel } from "./copy";
 import type { BacktestPanel as BacktestPanelModel } from "./model";
 import { OUTAGE_DISCLOSURE_SCRIPT } from "./outage-disclosure";
@@ -54,12 +53,6 @@ export function PartnerPageView({ view, backtest }: { view: Model; backtest: Bac
         </section>
       ) : null}
       {backtest === null ? null : <BacktestPanel partnerName={view.name} panel={backtest} />}
-      {view.terms.length > 0 ? (
-        <section aria-labelledby="coverage-heading" className="flex flex-col gap-4">
-          <h2 id="coverage-heading" className="font-heading text-lg font-semibold leading-tight md:text-xl">Coverage terms</h2>
-          <CoverageCards terms={view.terms} />
-        </section>
-      ) : null}
       {view.unavailable || view.tracking.length > 0 || view.terms.length === 0 ? (
         <section aria-labelledby="tracking-heading" className="flex min-w-0 flex-col gap-4">
           <h2 id="tracking-heading" className="font-heading text-lg font-semibold leading-tight md:text-xl">{view.trackingHeading}</h2>

@@ -16,27 +16,27 @@ export function AttentionTable({ rows, failure }: { rows: readonly AttentionRow[
     <Table caption="Terms at risk or breached">
       <TableHead>
         <tr className="border-b border-border">
-          <TableHeaderCell>Partner · scope</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
-          <TableHeaderCell numeric>Target / Actual</TableHeaderCell>
-          <TableHeaderCell>Error budget</TableHeaderCell>
+          <TableHeaderCell align="center">Partner · scope</TableHeaderCell>
+          <TableHeaderCell align="center">Contractual Status</TableHeaderCell>
+          <TableHeaderCell align="center" numeric>Target / Actual</TableHeaderCell>
+          <TableHeaderCell align="center">SLA Consumed</TableHeaderCell>
         </tr>
       </TableHead>
       <TableBody>
         {rows.map((row) => (
           <tr key={row.term.key} className="border-b border-border transition-colors duration-150 last:border-b-0 hover:bg-accent">
-            <td className="px-3 py-3 align-top">
+            <td className="px-3 py-3 text-center align-top">
               <a href={row.href} className="text-sm font-medium text-link underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{row.partnerName}</a>
               <p className="text-xs text-muted-foreground">{row.term.title}</p>
             </td>
-            <td className="px-3 py-3 align-top"><StatusBadge variant={badgeVariant[row.term.status]} label={statusLabel(row.term.status)} /></td>
-            <td className="px-3 py-3 text-right align-top font-mono text-sm tabular-nums">
+            <td className="px-3 py-3 text-center align-top"><StatusBadge variant={badgeVariant[row.term.status]} label={statusLabel(row.term.status)} /></td>
+            <td className="px-3 py-3 text-center align-top font-mono text-sm tabular-nums">
               {row.term.target} / <span className={row.term.status === "breached" ? "text-danger" : "text-warning"}>{row.term.actual}</span>
               {row.term.actualCaption === null ? null : <span className="block text-xs text-muted-foreground">{row.term.actualCaption}</span>}
             </td>
-            <td className="px-3 py-3 align-top">
+            <td className="px-3 py-3 text-center align-top">
               <BudgetBar usedMinutes={row.term.usedMinutes} allowedMinutes={row.term.allowedMinutes} tone={budgetTone[row.term.status]} />
-              <span className="mt-1 block font-mono text-xs text-muted-foreground">{row.term.consumedPercent}</span>
+              <span className="mt-1 block text-center font-mono text-sm text-muted-foreground">{row.term.consumedPercent}</span>
             </td>
           </tr>
         ))}

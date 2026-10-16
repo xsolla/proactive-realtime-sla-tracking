@@ -2,7 +2,6 @@ import { listPilotPartners, partnerLabel, partnerMerchantIds, scopeTitle, servic
 import type { BusinessCredit, BusinessRow, MonthHistory, TechnicalRow } from "@/feed";
 import {
   CLAUSE_NOT_RECORDED,
-  EXHAUSTION_NONE,
   TO_DATE,
   actualUptime,
   comparisonText,
@@ -12,7 +11,6 @@ import {
   formatMinutes,
   formatPercent,
   formatUptime,
-  formatUtcTimestamp,
   monthTitle,
   penaltyText,
   proratedWindowNote,
@@ -42,7 +40,6 @@ export type TermView = {
   consumedPercent: string;
   downLine: string;
   trend: TrendView;
-  exhaustion: string;
   credit: { incurred: string; projected: string; text: string };
   sentence: string;
   nextTier: string | null;
@@ -178,7 +175,6 @@ function technicalTerm(
     consumedPercent: consumedText(row.usedMinutes, row.allowedMinutes),
     downLine: downLine(row.usedMinutes, row.allowedMinutes),
     trend: buildTrend(row.history, windowKey, row.usedMinutes),
-    exhaustion: row.projectedExhaustion === null ? EXHAUSTION_NONE : formatUtcTimestamp(row.projectedExhaustion),
     credit: { incurred, projected, text: creditSummary(incurred, projected, row.penalty.incurred.kind === "credit") },
     sentence: statusExplanation(row.reason),
     nextTier: row.nextTierStartsAfterMinutes === null ? null : tierDistanceText(row.usedMinutes, row.nextTierStartsAfterMinutes),
@@ -233,7 +229,6 @@ function businessTerm(
     consumedPercent: consumedText(used, allowed),
     downLine: downLine(used, allowed),
     trend: buildTrend(row.history, windowKey, used),
-    exhaustion: row.projectedExhaustion === null ? EXHAUSTION_NONE : formatUtcTimestamp(row.projectedExhaustion),
     credit: { incurred, projected, text: creditSummary(incurred, projected, row.creditPercentage.incurred.kind === "percent") },
     sentence: row.summary,
     nextTier: null,

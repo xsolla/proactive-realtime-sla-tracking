@@ -8,10 +8,16 @@ import type { TermView } from "./view";
 const COLUMNS = 5;
 const GRID = "grid-cols-5";
 
+function incidentReference(term: TermView): string {
+  if (term.tickets === null) return "Not available";
+  if (term.tickets.length === 0) return "N/A";
+  return term.tickets.map((ticket) => ticket.key).join(", ");
+}
+
 function Facts({ term }: { term: TermView }) {
   const actualTone = term.status === "meeting" ? "text-foreground" : term.status === "at_risk" ? "text-warning" : "text-danger";
   return (
-    <div className={`grid ${GRID} items-center gap-x-3 px-3 py-3`}>
+    <div className={`grid ${GRID} items-center gap-x-3 px-3 py-3 text-center`}>
       <span>
         <span className="block text-sm font-medium text-foreground">{term.title}</span>
         <span className="block font-mono text-xs text-muted-foreground">{term.downLine}</span>
@@ -21,11 +27,11 @@ function Facts({ term }: { term: TermView }) {
         {term.target} / <span className={actualTone}>{term.actual}</span>
         {term.actualCaption === null ? null : <span className="block text-xs text-muted-foreground">{term.actualCaption}</span>}
       </span>
-      <span className="-translate-x-2">
+      <span>
         <BudgetBar usedMinutes={term.usedMinutes} allowedMinutes={term.allowedMinutes} tone={budgetTone[term.status]} />
         <span className="mt-1 block text-center font-mono text-sm text-muted-foreground">{term.consumedPercent}</span>
       </span>
-      <span className="font-mono text-sm tabular-nums text-foreground">{term.exhaustion}</span>
+      <span className="font-mono text-sm text-foreground">{incidentReference(term)}</span>
     </div>
   );
 }
@@ -39,8 +45,8 @@ export function TermTable({ partnerName, terms }: { partnerName: string; terms: 
             <th colSpan={COLUMNS} className="p-0 text-left font-normal">
               <div className="flex items-center">
                 <span aria-hidden="true" className="w-10 shrink-0" />
-                <div className={`grid min-w-0 flex-1 ${GRID} gap-x-3 px-3 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground`}>
-                  <span>Service</span><span>Status</span><span>Target / Actual</span><span className="-translate-x-2">Consumption meter</span><span>Projected</span>
+                <div className={`grid min-w-0 flex-1 ${GRID} gap-x-3 px-3 py-3 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground`}>
+                  <span>Service</span><span>Contractual Status</span><span>Target / Actual</span><span>SLA Consumed</span><span>Incident Ticket Reference</span>
                 </div>
               </div>
             </th>

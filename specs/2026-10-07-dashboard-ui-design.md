@@ -118,25 +118,24 @@ Reads, in order: viewer (the `sla_view` cookie, then `VIEWER_ROLE`), contract te
 | Tile | Figure | Treatment |
 | --- | --- | --- |
 | Breached | scored scopes with status `breached` | tile background tinted `danger` at low opacity and figure in `danger` when > 0 |
-| At risk | scored scopes with status `at_risk` | figure in `warning` when > 0 |
+| At risk | scored scopes with status `at_risk` | figure in `warning` when > 0; a `?` beside the label opens the current trend and level thresholds, breach boundary, and Slack transition behaviour |
 | Meeting | scored scopes with status `meeting` | plain |
 | Tracking only | partners with no bound terms | muted, sub-line `No target, no status` |
 
-**Needs attention.** A table of every scored scope with status `at_risk` or `breached`, breached first, then consumed fraction descending.
+**SLA Breaches/At Risk for Selected Month.** A table of every scored scope with status `at_risk` or `breached`, breached first, then consumed fraction descending.
 
 | Column | Content |
 | --- | --- |
 | Partner · scope | partner name linking to `/partners/[id]`, scope title beneath in muted |
-| Status | `StatusBadge` |
+| Contractual Status | `StatusBadge` |
 | Target / Actual | `99.950% / 99.760%`; actual in the status colour; caption `to date` while the window is open |
-| Error budget | `BudgetBar` then `351.9% consumed` in mono beneath |
-| Credit | `0% → 5%` (incurred → projected). "No penalty clause" or "Not entered" verbatim when that is the figure's kind. Never `0%` for an unknown |
+| SLA Consumed | `BudgetBar` then `351.9% consumed` in mono beneath |
+
+Column headings and row values are centred within their columns.
 
 Empty: a sentence, `No term is at risk or breached in this window.`, not an empty table.
 
-**Partner status rail.** Right column, one card per pilot partner, sorted worst status first, then by counted minutes descending. Card: name (link), worst status badge or `Tracking only` chip, mono line `3 terms · 4 outages · 86.0 min`. Tracking-only cards show `2 services · 3 outages · 41.0 min recorded` and a link `Add contract terms` when none exist, `Draft terms, not scoring` when terms are saved but not active.
-
-**States.** Settled window: the existing settled note under the heading. Feed unavailable: tiles show `Unavailable` as the figure with the error message beneath the heading, the table and rail each render one error row in `danger`. Business role: the same page from the business model (§9a).
+**States.** Settled window: the existing settled note under the heading. Feed unavailable: tiles show `Unavailable` as the figure with the error message beneath the heading, and the attention table renders one error row in `danger`. Business role: the same page from the business model (§9a).
 
 ## 7. Partner page (`/partners/[partner]`)
 
@@ -158,13 +157,12 @@ Tracking-only partner: tiles read `No terms` for the first three and the fourth 
 | Column | Content |
 | --- | --- |
 | Service | scope title; mono sub-line `76.0 / 21.6 min down` |
-| Status | `StatusBadge` |
+| Contractual Status | `StatusBadge` |
 | Target / Actual | as §6 |
-| Error budget | as §6, with `max 100%` right-aligned under the bar |
-| Projected | projected exhaustion timestamp, or `None projected` |
-| Credit | as §6 |
+| SLA Consumed | as §6 |
+| Incident Ticket Reference | distinct PIR keys such as `GTO-543`, comma-separated; `N/A` when the term has no incident; `Not available` when references are withheld from the business view |
 
-**Credit cell.** When incurred and projected are the same non-numeric statement (for example `penalty clause, not yet entered` for both), the cell shows that statement once. Numeric pairs keep `incurred → projected`.
+Column headings and row values are centred within their columns.
 
 Expanded content opens with the Window trend (§7.1) under a `Window trend` caption; it is not a table column. Below it, for a row with outages, today's `OutageLines`: PIR key linked to `pir_url`, start, computed end, minutes (both durations for a boundary outage), filed service, severity, merchant id, source, review line, merged groups marked, reconciliation line.
 
@@ -175,14 +173,6 @@ Scored partners with outages outside their scopes get a second table, `Outside c
 Rendered in the expanded panel of each term and tracking row, above any outage lines. Each shows twelve bars: eleven prior calendar months then the selected month. Prior bars are `muted-foreground`; the current bar takes the status colour on a scored row and `foreground` on a tracking row. A month before data coverage renders as a gap with no bar. Each bar carries a `<title>` of `April 2026: 12.0 min`, and a three-letter month label sits under each bar. The SVG is server-rendered and stretches to the full width of the panel; it has `role="img"` and an `aria-label` summarising the series.
 
 The trend carries no median mark or text. The comparison against recent months stays in the tracking table's `Compared with recent months` column. The data comes from the engine, §10.
-
-**Coverage terms.** Cards, three across, one per scored term.
-
-- Title: scope title; caption `UPTIME · MONTHLY`; status badge at the right.
-- Rows, label left and mono value right: `Target uptime`, `Actual uptime` (caption `to date` while open), `Allowed downtime`, `Consumed downtime`, `Remaining`, `Credit incurred`, `Credit projected`, `Next tier` (only when `nextTierStartsAfterMinutes` is known), `Window start` (only when prorated).
-- Source clause: the recorded clause in muted, or `Clause not recorded` in `warning`.
-- Status sentence rendered from `StatusReason`, as today.
-- `Tickets`: PIR keys that consumed this term's downtime, newest first, each linked to its stored `pir_url` (https only, as today); a key without a URL is plain mono text. Empty: `No outages in this window.`
 
 **Recorded downtime (tracking only).** For a partner with no bound terms: a line `Tracking only. Minutes are recorded downtime; there is no target or status.`, then a table with columns Service, Minutes this window, Incidents, Compared with recent months. Every row expands to the Window trend (§7.1), followed by the same outage lines when it has any; the unavailable row does not expand. A partner with no terms and no recorded rows shows the sentence `No downtime recorded in this window.` instead of a table.
 
@@ -225,7 +215,7 @@ The sidebar Health badge keeps the dropped-rows count on every engineer screen. 
 
 The business viewer gets the Overview (§6) and the partner page (§7) rendered by the same components from a model built on `toBusinessView`. What differs is only what the business payload lacks.
 
-**Overview.** Identical to §6. Tiles, the attention table, and the partner rail use status, consumed budget, credit percentage, and counts, all of which the business row carries. The rail's terms link is absent: the business role has no terms page.
+**Overview.** Identical to §6. Tiles and the attention table use status, consumed budget, credit percentage, and counts, all of which the business row carries.
 
 **Partner page.**
 
@@ -236,9 +226,8 @@ The business viewer gets the Overview (§6) and the partner page (§7) rendered 
 | Tiles | §7 | §7, same four |
 | Term table | §7 columns, rows expand to the trend and outage lines | §7 columns, rows expand to the trend only; no outage lines |
 | Window trend | §7.1, in the expanded panel | §7.1, in the expanded panel, from `history` on the business row |
-| Projected | exhaustion timestamp | exhaustion timestamp |
+| Incident Ticket Reference | PIR keys, or `N/A` with no incident | `Not available`; ticket identifiers remain excluded |
 | Credit | incurred → projected | incurred → projected |
-| Coverage cards | §7 rows, clause, status sentence, tickets | §7 rows and the status sentence only. No clause, no tickets |
 | Recorded downtime (tracking only) | expands to the trend and outage lines | expands to the trend only; comparison sentence as the business row renders it |
 
 The business row's `summary` sentence is the status sentence on its cards. The technical page keeps rendering its sentence from `StatusReason` through `copy.ts`, as today.
@@ -289,8 +278,8 @@ src/app/
 │                     load.ts), load.ts, model.ts (month options, health view, backtest panel, unusable
 │                     rows), outage-view.ts, copy.ts, run-backtest.ts, outage-disclosure.ts,
 │                     overview-page.tsx, partner-page-view.tsx, alerts-page.tsx, health-page.tsx,
-│                     attention-table.tsx, term-table.tsx, tracking-table.tsx, coverage-cards.tsx,
-│                     partner-rail.tsx, trend-sparkline.tsx, outage-lines.tsx, backtest-panel.tsx,
+│                     attention-table.tsx, term-table.tsx, tracking-table.tsx,
+│                     trend-sparkline.tsx, outage-lines.tsx, backtest-panel.tsx,
 │                     window-select.tsx
 ├── page.tsx                      overview
 ├── partners/[partner]/page.tsx   partner page
@@ -316,7 +305,6 @@ type TermView = {
   allowed: string; consumed: string; remaining: string
   usedMinutes: number; allowedMinutes: number; consumedPercent: string
   trend: TrendView
-  exhaustion: string
   credit: { incurred: string; projected: string }
   sentence: string
   nextTier: string | null
@@ -342,7 +330,7 @@ type PartnerView = {
 }
 ```
 
-`buildTechnicalPartners(rows: TechnicalRow[], ...)` and `buildBusinessPartners(rows: BusinessRow[])` both return `PartnerView[]`. `buildOverview`, `buildPartnerPage`, and `buildNav` take `PartnerView[]` and do not know the role. `Tiles`, `TermTable`, `CoverageCards`, `TrendSparkline`, `AttentionTable`, `PartnerRail`, and `Shell` are shared. `OutageLines`, `BacktestPanel`, and the terms link render only when their input is non-null.
+`buildTechnicalPartners(rows: TechnicalRow[], ...)` and `buildBusinessPartners(rows: BusinessRow[])` both return `PartnerView[]`. `buildOverview`, `buildPartnerPage`, and `buildNav` take `PartnerView[]` and do not know the role. `Tiles`, `TermTable`, `TrendSparkline`, `AttentionTable`, and `Shell` are shared. `OutageLines`, `BacktestPanel`, and the terms link render only when their input is non-null.
 
 ## 12. Testing
 
@@ -350,7 +338,7 @@ Same style as today: `renderToStaticMarkup`, assertions on text and attributes, 
 
 - `shell.test.tsx`: dot tone per partner state, active entry, badges including `!` on error, window param preserved on every href.
 - `overview.test.tsx`: tile counts, attention ordering, empty sentence versus error row, no `0%` for an unentered clause, settled note.
-- `partner-page.test.tsx`: tiles, term table columns, expanded outage lines with reconciliation and merged overlap counted once, coverage cards with linked tickets and plain keys, tracking-only page, error row on failure, prorated window note.
+- `partner-page.test.tsx`: tiles, term table columns, expanded outage lines with reconciliation and merged overlap counted once, tracking-only page, and error row on failure.
 - `alerts.test.tsx`: sort order, `tracking:` scope label, badge count excludes `meeting` and `quiet`, error state.
 - `health.test.tsx`: unusable rows table, lists with `None`, ingestion error never a zero.
 - `trend.test.tsx`: seven bars, gap for a pre-coverage month, mark text per condition.
