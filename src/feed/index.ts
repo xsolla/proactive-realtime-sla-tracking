@@ -26,7 +26,7 @@ export type {
   TechnicalRow,
   UnusableRow,
 } from "./types";
-export { VIEW_COOKIE, getViewer, resolveViewer, type Viewer, type ViewerRole } from "./viewer";
+export { getViewer, resolveViewer, type Viewer, type ViewerRole } from "./viewer";
 export {
   EARLIEST_DATA_MONTH,
   calendarMonthWindow,

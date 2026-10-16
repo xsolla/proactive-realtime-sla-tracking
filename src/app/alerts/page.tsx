@@ -9,11 +9,11 @@ import { Shell } from "@/app/shell/shell";
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-export default async function AlertsRoute({ searchParams }: { searchParams: Promise<{ window?: string | string[] }> }) {
+export default async function AlertsRoute({ searchParams }: { searchParams: Promise<{ window?: string | string[]; view?: string | string[] }> }) {
   noStore();
   const params = await searchParams;
   const requested = Array.isArray(params.window) ? params.window[0] : params.window;
-  const workspace = await loadWorkspace({ window: requested === "all" ? undefined : requested, windowPath: "/alerts" });
+  const workspace = await loadWorkspace({ window: requested === "all" ? undefined : requested, view: Array.isArray(params.view) ? params.view[0] : params.view, windowPath: "/alerts" });
   if (workspace.role === "business") {
     notFound();
   }

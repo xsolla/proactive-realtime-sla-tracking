@@ -1,5 +1,4 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { cookies } from "next/headers";
 import { getDatabase, listAlertState, readContractTerms, type AlertStateRow, type ContractTermsRow } from "@/data";
 import { DbTermsProvider } from "@/terms";
 import {
@@ -8,7 +7,6 @@ import {
   listPilotPartners,
   resolveDashboardWindow,
   resolveViewer,
-  VIEW_COOKIE,
   windowFromMonthKey,
   windowPhase,
   type TechnicalRow,
@@ -58,10 +56,12 @@ export type Workspace = {
 
 /**
  * One feed read per request. Every page derives its sidebar, tiles, and tables from the result.
- * `windowPath` is the route the month picker reloads; `unusable` opts in to the second health read.
+ * `view` is the viewer preference (`technical` or `business`) the mini-app sends; anything else
+ * follows VIEWER_ROLE. `windowPath` is the route the month picker reloads; `unusable` opts in to
+ * the second health read.
  */
 export async function loadWorkspace(
-  input: { window?: string; backtestPartner?: string; windowPath?: string; unusable?: boolean } = {},
+  input: { window?: string; view?: string; backtestPartner?: string; windowPath?: string; unusable?: boolean } = {},
 ): Promise<Workspace> {
   noStore();
   const asOf = new Date();
@@ -75,11 +75,9 @@ export async function loadWorkspace(
     asOfLabel: formatUtcTimestamp(asOf.toISOString()),
   };
 
-  // Read outside the try: a dynamic-API bailout must not be mistaken for a bad VIEWER_ROLE.
-  const override = (await cookies()).get(VIEW_COOKIE)?.value;
   let viewer: Viewer;
   try {
-    viewer = resolveViewer(override);
+    viewer = resolveViewer(input.view);
   } catch (error) {
     console.error("[sla-dashboard] viewer", error);
     return {

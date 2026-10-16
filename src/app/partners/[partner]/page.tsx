@@ -18,13 +18,14 @@ export default async function PartnerPage({
   searchParams,
 }: {
   params: Promise<{ partner: string }>;
-  searchParams: Promise<{ window?: string | string[]; backtest?: string | string[] }>;
+  searchParams: Promise<{ window?: string | string[]; backtest?: string | string[]; view?: string | string[] }>;
 }) {
   noStore();
   const { partner: id } = await params;
   const query = await searchParams;
   const workspace = await loadWorkspace({
     window: single(query.window),
+    view: single(query.view),
     windowPath: `/partners/${id}`,
     backtestPartner: single(query.backtest) === "1" ? id : undefined,
   });

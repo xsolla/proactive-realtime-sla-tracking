@@ -19,7 +19,7 @@ export default async function PartnerTermsPage({
   searchParams,
 }: {
   params: Promise<{ partner: string }>;
-  searchParams: Promise<{ edit?: string | string[]; window?: string | string[] }>;
+  searchParams: Promise<{ edit?: string | string[]; window?: string | string[]; view?: string | string[] }>;
 }) {
   noStore();
   const { partner } = await params;
@@ -28,7 +28,7 @@ export default async function PartnerTermsPage({
   }
   const query = await searchParams;
   const requested = Array.isArray(query.window) ? query.window[0] : query.window;
-  const workspace = await loadWorkspace({ window: requested });
+  const workspace = await loadWorkspace({ window: requested, view: Array.isArray(query.view) ? query.view[0] : query.view });
   if (workspace.role === "business") {
     notFound();
   }

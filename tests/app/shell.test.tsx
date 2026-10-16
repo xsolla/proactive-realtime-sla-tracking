@@ -149,9 +149,9 @@ describe("shell", () => {
     expect(html).not.toContain("Health unavailable");
     const anchors = toggleAnchors(html);
     expect(anchors).toHaveLength(2);
-    expect(anchors[0]).toContain('href="/view/technical"');
+    expect(anchors[0]).toContain('href="/?view=technical&amp;window=2026-09"');
     expect(anchors[0]).toContain('aria-current="page"');
-    expect(anchors[1]).toContain('href="/view/business"');
+    expect(anchors[1]).toContain('href="/?view=business&amp;window=2026-09"');
     expect(anchors[1]).not.toContain("aria-current");
     expect(html).toContain("Engineer view");
     expect(html).toContain("Business view");
@@ -162,9 +162,9 @@ describe("shell", () => {
     const html = renderToStaticMarkup(<Shell nav={nav} frame={{ ...frame, view: { active: "business" } }} breadcrumb={[{ label: "Overview" }]}><p /></Shell>);
     const anchors = toggleAnchors(html);
     expect(anchors).toHaveLength(2);
-    expect(anchors[0]).toContain('href="/view/technical"');
+    expect(anchors[0]).toContain('href="/?view=technical&amp;window=2026-09"');
     expect(anchors[0]).not.toContain("aria-current");
-    expect(anchors[1]).toContain('href="/view/business"');
+    expect(anchors[1]).toContain('href="/?view=business&amp;window=2026-09"');
     expect(anchors[1]).toContain('aria-current="page"');
     expect(html).not.toContain('href="/alerts');
     expect(html).not.toContain('href="/health');

@@ -13,12 +13,8 @@ const mocks = vi.hoisted(() => ({
   readContractTerms: vi.fn(),
 }));
 const originalRole = process.env.VIEWER_ROLE;
-const cookieBox = vi.hoisted(() => ({ value: undefined as string | undefined }));
 
 vi.mock("next/cache", () => ({ unstable_noStore: () => undefined }));
-vi.mock("next/headers", () => ({
-  cookies: async () => ({ get: (name: string) => (name === "sla_view" && cookieBox.value !== undefined ? { name, value: cookieBox.value } : undefined) }),
-}));
 vi.mock("@/feed", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/feed")>()),
   getSlaFeed: mocks.getSlaFeed,
@@ -84,7 +80,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   Object.values(mocks).forEach((mock) => mock.mockReset());
-  cookieBox.value = undefined;
   if (originalRole === undefined) {
     delete process.env.VIEWER_ROLE;
   } else {
@@ -202,28 +197,28 @@ describe("loadWorkspace", () => {
     expect(home.frame.months.every((month) => month.href.startsWith("/?window="))).toBe(true);
   });
 
-  it("lets the view cookie override the viewer role, and follows the deployment default without one", async () => {
+  it("lets the view parameter override the viewer role, and follows the deployment default without one", async () => {
     process.env.VIEWER_ROLE = "technical";
     mocks.getSlaFeed.mockImplementation(async ({ viewer }: { viewer: { role: string } }) => (viewer.role === "business" ? businessFeed() : technicalFeed()));
 
-    cookieBox.value = "business";
-    const business = await loadWorkspace({});
+    const business = await loadWorkspace({ view: "business" });
     expect(business.role).toBe("business");
     expect(business.view).toEqual({ active: "business" });
     expect(mocks.getSlaFeed.mock.calls[0]?.[0].viewer).toEqual({ role: "business" });
     expect(business.health).toBeNull();
 
-    cookieBox.value = undefined;
     const fallback = await loadWorkspace({});
     expect(fallback.role).toBe("technical");
     expect(fallback.view).toEqual({ active: "technical" });
+
+    const ignored = await loadWorkspace({ view: "system" });
+    expect(ignored.role).toBe("technical");
   });
 
-  it("lets a technical cookie win over a business deployment default", async () => {
+  it("lets a technical view parameter win over a business deployment default", async () => {
     process.env.VIEWER_ROLE = "business";
     mocks.getSlaFeed.mockResolvedValue(technicalFeed());
-    cookieBox.value = "technical";
-    const workspace = await loadWorkspace({});
+    const workspace = await loadWorkspace({ view: "technical" });
     expect(workspace.role).toBe("technical");
     expect(workspace.view).toEqual({ active: "technical" });
   });

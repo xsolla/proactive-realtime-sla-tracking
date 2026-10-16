@@ -30,7 +30,7 @@ export function TopBar({
       <div className="flex flex-wrap items-center gap-4">
         {showWindow ? <WindowSelect months={frame.months} title={frame.windowTitle} phase={frame.phase} /> : null}
         <p className="font-mono text-xs tabular-nums text-muted-foreground">as of {frame.asOfLabel}</p>
-        <ViewToggle active={frame.view.active} />
+        <ViewToggle active={frame.view.active} windowKey={frame.windowKey} />
       </div>
     </header>
   );
@@ -40,8 +40,8 @@ const SEGMENT = "inline-flex min-h-11 items-center rounded-button border px-3 py
 const SEGMENT_ACTIVE = "border-primary bg-primary/10 text-brand-text";
 const SEGMENT_INACTIVE = "border-border text-muted-foreground hover:bg-accent";
 
-/** Plain links to the route that sets the view cookie; no client code. */
-function ViewToggle({ active }: { active: "technical" | "business" }) {
+/** Plain links to the overview with the view preference as a query parameter; no client code. */
+function ViewToggle({ active, windowKey }: { active: "technical" | "business"; windowKey: string }) {
   const segments = [
     { role: "technical", label: ENGINEER_VIEW },
     { role: "business", label: BUSINESS_VIEW },
@@ -51,7 +51,7 @@ function ViewToggle({ active }: { active: "technical" | "business" }) {
       {segments.map((segment) => (
         <a
           key={segment.role}
-          href={`/view/${segment.role}`}
+          href={`/?view=${segment.role}&window=${encodeURIComponent(windowKey)}`}
           aria-current={active === segment.role ? "page" : undefined}
           className={`${SEGMENT} ${active === segment.role ? SEGMENT_ACTIVE : SEGMENT_INACTIVE}`}
         >
