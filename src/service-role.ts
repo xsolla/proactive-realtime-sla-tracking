@@ -41,8 +41,10 @@ function withoutTrailingSlash(pathname: string): string {
 /**
  * `ingestion` allows exactly its two paths (a trailing slash tolerated) and
  * nothing else — not `/_next/*`, not a sub-path below either of them.
- * `dashboard` allows everything except those two paths and anything nested
- * under them, so it denies `/api/ingest/pir-approved/anything` too.
+ * `dashboard` serves route handlers only, so it allows `/api/*` except the
+ * two ingestion paths and anything nested under them (it denies
+ * `/api/ingest/pir-approved/anything` too). Everything else, `/` included,
+ * is 404: the UI is the sla-tracking mini-app.
  */
 export function isPathAllowed(role: ServiceRole, pathname: string): boolean {
   const normalized = withoutTrailingSlash(pathname);
@@ -51,6 +53,9 @@ export function isPathAllowed(role: ServiceRole, pathname: string): boolean {
     return (INGESTION_PATHS as readonly string[]).includes(normalized);
   }
 
+  if (!normalized.startsWith("/api/")) {
+    return false;
+  }
   return !INGESTION_PATHS.some(
     (ingestionPath) => normalized === ingestionPath || normalized.startsWith(`${ingestionPath}/`),
   );

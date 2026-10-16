@@ -1,10 +1,7 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { partitionOutages, readContractTerms, saveContractTerms, type IngestionHealth, type OutageSourceRow } from "@/data";
 import { getSlaFeed } from "@/feed";
 import { DbTermsProvider, loadContractFile, type ContractFile, type ContractScope } from "@/terms";
-import { INVALID_CONTRACT_TERMS_LABEL } from "@/app/dashboard/copy";
-import { HealthPage } from "@/app/dashboard/health-page";
 import { buildHealth } from "@/app/dashboard/model";
 import { createTestDatabase, type TestDatabase } from "../support/database";
 
@@ -143,14 +140,7 @@ describe("DbTermsProvider", () => {
       }),
     ]);
 
-    const html = renderToStaticMarkup(
-      <HealthPage
-        health={buildHealth({ health: feed.health, ingestion: feed.ingestion, invalidTerms: feed.invalidTerms })}
-        unusable={[]}
-      />,
-    );
-    expect(html).toContain(INVALID_CONTRACT_TERMS_LABEL);
-    expect(html).toContain("Twitch");
-    expect(html).toContain("0 to 100");
+    const health = buildHealth({ health: feed.health, ingestion: feed.ingestion, invalidTerms: feed.invalidTerms });
+    expect(health.invalidTerms).toEqual([{ partner: "twitch", label: "Twitch", message: expect.stringMatching(/0 to 100/) }]);
   });
 });
