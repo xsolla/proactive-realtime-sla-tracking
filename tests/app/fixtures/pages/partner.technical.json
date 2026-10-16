@@ -1,0 +1,432 @@
+{
+  "frame": {
+    "windowKey": "2026-09",
+    "windowTitle": "September 2026",
+    "phase": "open",
+    "phaseLabel": "In progress",
+    "months": [
+      {
+        "key": "2026-09",
+        "title": "September 2026",
+        "phase": "open",
+        "phaseLabel": "In progress",
+        "href": "/?window=2026-09",
+        "selected": true
+      },
+      {
+        "key": "2026-08",
+        "title": "August 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-08",
+        "selected": false
+      },
+      {
+        "key": "2026-07",
+        "title": "July 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-07",
+        "selected": false
+      },
+      {
+        "key": "2026-06",
+        "title": "June 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-06",
+        "selected": false
+      },
+      {
+        "key": "2026-05",
+        "title": "May 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-05",
+        "selected": false
+      },
+      {
+        "key": "2026-04",
+        "title": "April 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-04",
+        "selected": false
+      },
+      {
+        "key": "2026-03",
+        "title": "March 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-03",
+        "selected": false
+      },
+      {
+        "key": "2026-02",
+        "title": "February 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-02",
+        "selected": false
+      },
+      {
+        "key": "2026-01",
+        "title": "January 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-01",
+        "selected": false
+      }
+    ],
+    "asOfLabel": "2026-09-23 15:58:00 UTC",
+    "view": {
+      "active": "technical"
+    }
+  },
+  "nav": {
+    "windowKey": "2026-09",
+    "role": "technical",
+    "partners": [
+      {
+        "id": "scopely",
+        "name": "Scopely",
+        "href": "/partners/scopely?window=2026-09",
+        "tone": "breached"
+      },
+      {
+        "id": "niantic",
+        "name": "Niantic",
+        "href": "/partners/niantic?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "kabam",
+        "name": "Kabam",
+        "href": "/partners/kabam?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "warner-brothers",
+        "name": "Warner Brothers",
+        "href": "/partners/warner-brothers?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "bandai-namco",
+        "name": "Bandai Namco",
+        "href": "/partners/bandai-namco?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "second-dinner",
+        "name": "Second Dinner",
+        "href": "/partners/second-dinner?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "roblox",
+        "name": "Roblox",
+        "href": "/partners/roblox?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "twitch",
+        "name": "Twitch",
+        "href": "/partners/twitch?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "mihoyo",
+        "name": "miHoYo",
+        "href": "/partners/mihoyo?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "nexters",
+        "name": "Nexters",
+        "href": "/partners/nexters?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "netmarble",
+        "name": "Netmarble",
+        "href": "/partners/netmarble?window=2026-09",
+        "tone": "tracking"
+      }
+    ],
+    "alerts": {
+      "count": 1
+    },
+    "health": {
+      "count": 3
+    },
+    "active": {
+      "kind": "partner",
+      "id": "scopely"
+    }
+  },
+  "breadcrumb": [
+    {
+      "label": "← Overview",
+      "href": "/?window=2026-09"
+    },
+    {
+      "label": "Scopely"
+    }
+  ],
+  "showWindow": true,
+  "view": {
+    "id": "scopely",
+    "name": "Scopely",
+    "worst": "breached",
+    "worstLabel": "Breached",
+    "trackingOnly": false,
+    "unavailable": false,
+    "unavailableRow": null,
+    "failure": null,
+    "meta": [
+      "Merchant ID 151639",
+      "1 term"
+    ],
+    "termsLink": {
+      "label": "Contract on file",
+      "href": "/partners/scopely/terms"
+    },
+    "backtest": {
+      "enabled": true,
+      "windowKey": "2026-09",
+      "tooltip": "Backtest runs once this partner's contract terms are bound. Tracking-only partners have no terms to replay."
+    },
+    "tiles": [
+      {
+        "label": "Covered services",
+        "value": "1",
+        "detail": "2 outage instances",
+        "tone": "neutral",
+        "emphasis": false
+      },
+      {
+        "label": "At risk",
+        "value": "1 / 1",
+        "detail": null,
+        "tone": "warning",
+        "emphasis": false
+      },
+      {
+        "label": "Breached",
+        "value": "1",
+        "detail": null,
+        "tone": "danger",
+        "emphasis": true
+      },
+      {
+        "label": "Downtime this window",
+        "value": "76 min",
+        "detail": "of 21.6 min allowed",
+        "tone": "neutral",
+        "emphasis": false
+      }
+    ],
+    "terms": [
+      {
+        "key": "scopely:payments",
+        "title": "Payments",
+        "status": "breached",
+        "statusLabel": "Breached",
+        "target": "99.950%",
+        "actual": "99.648%",
+        "actualCaption": "to date",
+        "allowed": "21.6 min",
+        "consumed": "76 min",
+        "remaining": "0 min",
+        "usedMinutes": 76,
+        "allowedMinutes": 21.6,
+        "consumedPercent": "351.9% consumed",
+        "downLine": "76.0 / 21.6 min down",
+        "trend": {
+          "bars": [
+            {
+              "month": "2026-03",
+              "label": "March 2026",
+              "minutes": null,
+              "current": false
+            },
+            {
+              "month": "2026-04",
+              "label": "April 2026",
+              "minutes": 0,
+              "current": false
+            },
+            {
+              "month": "2026-05",
+              "label": "May 2026",
+              "minutes": 12,
+              "current": false
+            },
+            {
+              "month": "2026-06",
+              "label": "June 2026",
+              "minutes": 30,
+              "current": false
+            },
+            {
+              "month": "2026-07",
+              "label": "July 2026",
+              "minutes": 8,
+              "current": false
+            },
+            {
+              "month": "2026-08",
+              "label": "August 2026",
+              "minutes": 20,
+              "current": false
+            },
+            {
+              "month": "2026-09",
+              "label": "September 2026",
+              "minutes": 76,
+              "current": true
+            }
+          ],
+          "summary": "March 2026: no data; April 2026: 0.0 min; May 2026: 12.0 min; June 2026: 30.0 min; July 2026: 8.0 min; August 2026: 20.0 min; September 2026: 76.0 min"
+        },
+        "credit": {
+          "incurred": "5%",
+          "projected": "10%",
+          "text": "5% → 10%"
+        },
+        "sentence": "Downtime has used 76 min of the 21.6 min allowance for this window.",
+        "nextTier": null,
+        "windowNote": null,
+        "clause": {
+          "text": "Clause not recorded",
+          "missing": true
+        },
+        "tickets": [
+          {
+            "key": "GTO-601",
+            "href": null
+          },
+          {
+            "key": "GTO-600",
+            "href": "https://jira.example/browse/GTO-600"
+          }
+        ],
+        "outages": [
+          {
+            "pirKey": "GTO-601",
+            "href": null,
+            "started": "2026-09-12 10:00:00 UTC",
+            "ended": "2026-09-12 10:26:00 UTC",
+            "minutesLabel": "26 min",
+            "service": "Payments",
+            "severity": "L2 · Major",
+            "review": "system_written",
+            "merchantId": "151639",
+            "source": "pipeline",
+            "mergeGroup": "2",
+            "countedMinutes": 26
+          },
+          {
+            "pirKey": "GTO-600",
+            "href": "https://jira.example/browse/GTO-600",
+            "started": "2026-09-10 10:00:00 UTC",
+            "ended": "2026-09-10 10:50:00 UTC",
+            "minutesLabel": "50 min",
+            "service": "Payments",
+            "severity": "L1 · Critical",
+            "review": "system_written",
+            "merchantId": "151639",
+            "source": "pipeline",
+            "mergeGroup": "1",
+            "countedMinutes": 50
+          }
+        ],
+        "reconciliation": "2 outages · 76 minutes counted in this window"
+      }
+    ],
+    "tracking": [
+      {
+        "key": "scopely:tracking:login",
+        "service": "Login",
+        "minutes": "9 min",
+        "incidents": "1",
+        "usedMinutes": 9,
+        "outageCount": 1,
+        "comparison": "Above this partner's six-month median of 10 min",
+        "trend": {
+          "bars": [
+            {
+              "month": "2026-03",
+              "label": "March 2026",
+              "minutes": null,
+              "current": false
+            },
+            {
+              "month": "2026-04",
+              "label": "April 2026",
+              "minutes": 0,
+              "current": false
+            },
+            {
+              "month": "2026-05",
+              "label": "May 2026",
+              "minutes": 12,
+              "current": false
+            },
+            {
+              "month": "2026-06",
+              "label": "June 2026",
+              "minutes": 30,
+              "current": false
+            },
+            {
+              "month": "2026-07",
+              "label": "July 2026",
+              "minutes": 8,
+              "current": false
+            },
+            {
+              "month": "2026-08",
+              "label": "August 2026",
+              "minutes": 20,
+              "current": false
+            },
+            {
+              "month": "2026-09",
+              "label": "September 2026",
+              "minutes": 9,
+              "current": true
+            }
+          ],
+          "summary": "March 2026: no data; April 2026: 0.0 min; May 2026: 12.0 min; June 2026: 30.0 min; July 2026: 8.0 min; August 2026: 20.0 min; September 2026: 9.0 min"
+        },
+        "outages": [
+          {
+            "pirKey": "GTO-543",
+            "href": "https://jira.example/browse/GTO-543",
+            "started": "2026-09-02 23:40:00 UTC",
+            "ended": "2026-09-03 00:00:00 UTC",
+            "minutesLabel": "20 min",
+            "service": "Payments",
+            "severity": "L1 · Critical",
+            "review": "ai_approved · ada · 2026-09-02 23:55:00 UTC",
+            "merchantId": "151639",
+            "source": null,
+            "mergeGroup": "1",
+            "countedMinutes": 20
+          }
+        ],
+        "reconciliation": "1 outage · 20 minutes counted in this window"
+      }
+    ],
+    "trackingNote": null,
+    "trackingHeading": "Outside contracted scopes",
+    "settledNote": null,
+    "windowKey": "2026-09"
+  },
+  "backtest": {
+    "state": "error",
+    "message": "Backtest failed."
+  }
+}

@@ -1,0 +1,259 @@
+{
+  "frame": {
+    "windowKey": "2026-09",
+    "windowTitle": "September 2026",
+    "phase": "open",
+    "phaseLabel": "In progress",
+    "months": [
+      {
+        "key": "2026-09",
+        "title": "September 2026",
+        "phase": "open",
+        "phaseLabel": "In progress",
+        "href": "/?window=2026-09",
+        "selected": true
+      },
+      {
+        "key": "2026-08",
+        "title": "August 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-08",
+        "selected": false
+      },
+      {
+        "key": "2026-07",
+        "title": "July 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-07",
+        "selected": false
+      },
+      {
+        "key": "2026-06",
+        "title": "June 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-06",
+        "selected": false
+      },
+      {
+        "key": "2026-05",
+        "title": "May 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-05",
+        "selected": false
+      },
+      {
+        "key": "2026-04",
+        "title": "April 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-04",
+        "selected": false
+      },
+      {
+        "key": "2026-03",
+        "title": "March 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-03",
+        "selected": false
+      },
+      {
+        "key": "2026-02",
+        "title": "February 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-02",
+        "selected": false
+      },
+      {
+        "key": "2026-01",
+        "title": "January 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-01",
+        "selected": false
+      }
+    ],
+    "asOfLabel": "2026-09-23 15:58:00 UTC",
+    "view": {
+      "active": "technical"
+    }
+  },
+  "nav": {
+    "windowKey": "2026-09",
+    "role": "technical",
+    "partners": [
+      {
+        "id": "scopely",
+        "name": "Scopely",
+        "href": "/partners/scopely?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "niantic",
+        "name": "Niantic",
+        "href": "/partners/niantic?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "kabam",
+        "name": "Kabam",
+        "href": "/partners/kabam?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "warner-brothers",
+        "name": "Warner Brothers",
+        "href": "/partners/warner-brothers?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "bandai-namco",
+        "name": "Bandai Namco",
+        "href": "/partners/bandai-namco?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "second-dinner",
+        "name": "Second Dinner",
+        "href": "/partners/second-dinner?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "roblox",
+        "name": "Roblox",
+        "href": "/partners/roblox?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "twitch",
+        "name": "Twitch",
+        "href": "/partners/twitch?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "mihoyo",
+        "name": "miHoYo",
+        "href": "/partners/mihoyo?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "nexters",
+        "name": "Nexters",
+        "href": "/partners/nexters?window=2026-09",
+        "tone": "unknown"
+      },
+      {
+        "id": "netmarble",
+        "name": "Netmarble",
+        "href": "/partners/netmarble?window=2026-09",
+        "tone": "unknown"
+      }
+    ],
+    "alerts": {
+      "status": "error"
+    },
+    "health": {
+      "status": "error"
+    },
+    "active": {
+      "kind": "partner",
+      "id": "scopely"
+    }
+  },
+  "breadcrumb": [
+    {
+      "label": "← Overview",
+      "href": "/?window=2026-09"
+    },
+    {
+      "label": "Scopely"
+    }
+  ],
+  "showWindow": true,
+  "view": {
+    "id": "scopely",
+    "name": "Scopely",
+    "worst": null,
+    "worstLabel": null,
+    "trackingOnly": true,
+    "unavailable": true,
+    "unavailableRow": {
+      "key": "scopely:unavailable",
+      "service": "Unavailable",
+      "minutes": "Unavailable",
+      "incidents": "Unavailable",
+      "usedMinutes": 0,
+      "outageCount": 0,
+      "comparison": "Unavailable. This is not zero downtime.",
+      "trend": {
+        "bars": [
+          {
+            "month": "2026-09",
+            "label": "September 2026",
+            "minutes": 0,
+            "current": true
+          }
+        ],
+        "summary": "September 2026: 0.0 min"
+      },
+      "outages": null,
+      "reconciliation": ""
+    },
+    "failure": "The outage query failed. These figures are unavailable. This is not zero downtime.",
+    "meta": [
+      "Merchant ID 151639",
+      "0 terms"
+    ],
+    "termsLink": {
+      "label": "Contract on file",
+      "href": "/partners/scopely/terms"
+    },
+    "backtest": {
+      "enabled": true,
+      "windowKey": "2026-09",
+      "tooltip": "Backtest runs once this partner's contract terms are bound. Tracking-only partners have no terms to replay."
+    },
+    "tiles": [
+      {
+        "label": "Covered services",
+        "value": "Unavailable",
+        "detail": null,
+        "tone": "muted",
+        "emphasis": false
+      },
+      {
+        "label": "At risk",
+        "value": "Unavailable",
+        "detail": null,
+        "tone": "muted",
+        "emphasis": false
+      },
+      {
+        "label": "Breached",
+        "value": "Unavailable",
+        "detail": null,
+        "tone": "muted",
+        "emphasis": false
+      },
+      {
+        "label": "Downtime this window",
+        "value": "Unavailable",
+        "detail": null,
+        "tone": "muted",
+        "emphasis": false
+      }
+    ],
+    "terms": [],
+    "tracking": [],
+    "trackingNote": null,
+    "trackingHeading": "Recorded downtime",
+    "settledNote": null,
+    "windowKey": "2026-09"
+  },
+  "backtest": null
+}

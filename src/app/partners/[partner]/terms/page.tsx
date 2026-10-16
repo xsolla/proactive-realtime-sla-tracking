@@ -7,7 +7,7 @@ import { getDatabase, readContractTermsForPartner } from "@/data";
 import { partnerLabel } from "@/feed";
 import { isPartnerId } from "@/registry";
 import { emptyContractForm } from "@/terms/review-contract";
-import { formStateFromTerms } from "./form-state";
+import { formStateFromTerms } from "@/terms/form-state";
 import { TermsEditor } from "./terms-editor";
 import { TermsView } from "./terms-view";
 
