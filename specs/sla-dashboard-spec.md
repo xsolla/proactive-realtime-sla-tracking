@@ -60,11 +60,11 @@ Slice one is independently useful and shippable. The business view ships with th
 
 
 
-### AD-1 — Next.js App Router, TypeScript, one codebase, two Cloud Run services
+### AD-1 — Next.js API backend, TypeScript, one codebase, two Cloud Run services; the UI is a mini-app
 
-Next.js keeps the backend and the UI in one app, and server components make server-side permission enforcement the default path rather than something to remember. A single app at repo root, no workspace, no packages.
+Revised 2026-10-16 (`specs/2026-10-16-mini-app-split-design.md`). This repo is the backend: Next.js serves route handlers only, no pages. The UI is the `sla-tracking` mini-app in `xsolla/mini-apps` (`apps/sla-tracking`), served by the mini-app host at `prototype.xsolla.dev` inside an Okta session, and it reaches the backend only through the host's proxy (`/api/mini-app-proxy/sla-tracking`). The page endpoints under `/api/sla/pages/*` build every view model, label and href on the server, so role shaping stays server-side and the registry has one copy.
 
-The image is built once and deployed twice, selected by `SERVICE_ROLE`: `sla-ingestion` with public ingress, serving only the Jira ingestion endpoint and Slack interactions, and `sla-dashboard` with internal ingress, serving everything else. Cloud Run ingress applies to a whole service, and the dashboard has no authentication yet, so it cannot share a public service. Middleware is deny-by-default, and a missing or unknown `SERVICE_ROLE` stops the app at startup.
+The image is built once and deployed twice, selected by `SERVICE_ROLE`: `sla-ingestion` with public ingress, serving only the Jira ingestion endpoint and Slack interactions, and `sla-dashboard` serving the API, with `ingress: all` and invocation locked by Cloud Run IAM to the host proxy's service account and the runtime account the alert job uses. Middleware is deny-by-default: `sla-dashboard` answers `/api/*` minus the ingestion paths and 404s everything else, and a missing or unknown `SERVICE_ROLE` stops the app at startup.
 
 ### AD-2 — Compute on read; persist only alert state
 
@@ -96,7 +96,9 @@ This is the single most load-bearing detail in the design. Without it, historica
 
 Payload shaping happens on the server in two serialisers, not by conditional rendering in the client. The business payload never contains ticket keys, so they cannot leak through a missed conditional.
 
-Revised 2026-10-07: until SSO lands the role is a viewer preference. A top-bar toggle sets an `sla_view` cookie that overrides `VIEWER_ROLE`. The business view hides engineer-side material by construction, so nothing leaks through a missed conditional, but it is not an access boundary; SSO makes it one by replacing `resolveViewer`'s input with the session. The switch is a GET that sets a preference cookie, so a cross-site link can change a viewer's view; that is accepted because the view is a preference, not a boundary.
+Revised 2026-10-07: until SSO lands the role is a viewer preference. The business view hides engineer-side material by construction, so nothing leaks through a missed conditional, but it is not an access boundary.
+
+Revised 2026-10-16: sign-in is the mini-app host's Okta session. The preference is the mini-app's top-bar toggle, kept in the browser and sent as the `view` query parameter of every page endpoint; `resolveViewer(view)` applies it, and `VIEWER_ROLE` stays the default for `/api/sla/feed`, `/api/sla/health` and the alert job. The host proxy forwards the signed-in identity as `X-Forwarded-User`; the backend trusts only that header for identity (contract term saves record it, §6.6). Mapping that identity to a role instead of the preference is a later revision.
 
 ### AD-6 — No provisional data reaches any screen; terms are entered through the dashboard
 
@@ -128,7 +130,7 @@ Full design: the companion document.
 
 ## 4. Repo layout and module boundaries
 
-Single Next.js application at repo root.
+Single Next.js application at repo root, route handlers only. The React UI lives in `xsolla/mini-apps` under `apps/sla-tracking` (revised 2026-10-16).
 
 ```
 /
@@ -150,8 +152,7 @@ Single Next.js application at repo root.
 │   ├── feed/      viewer, composition, business/technical serialisers
 │   ├── alerts/    transition detection, message builders, slack client
 │   ├── ingestion/ jira fetch, resolution, capture message, corrections, writer
-│   ├── ui/        themed primitives (table, badge, card, bar)
-│   └── app/       routes and pages
+│   └── app/       route handlers; app/dashboard holds the pure view models and page envelopes
 ├── scripts/backtest.ts
 └── tests/
 ```
@@ -564,7 +565,7 @@ function getSlaFeed(input: {
 }): Promise<SlaFeed>
 ```
 
-Loads outages, resolves identities, fetches scopes, calls `evaluate()`, shapes by role. The dashboard calls it with the current user; the alert job calls it with a system viewer. That shared call is the mechanism behind GTOC-43's requirement that the two views cannot disagree. `getSlaFeed` is unchanged by the view toggle: the dashboard resolves its viewer from the `sla_view` cookie first, then `VIEWER_ROLE`. The API routes and the alert job keep calling `getViewer()`, so the API follows the deployment default, not the cookie.
+Loads outages, resolves identities, fetches scopes, calls `evaluate()`, shapes by role. The dashboard calls it with the current user; the alert job calls it with a system viewer. That shared call is the mechanism behind GTOC-43's requirement that the two views cannot disagree. `getSlaFeed` is unchanged by the view toggle: the page endpoints resolve their viewer from the `view` query parameter first, then `VIEWER_ROLE` (revised 2026-10-16; the `sla_view` cookie is gone). `/api/sla/feed`, `/api/sla/health` and the alert job keep calling `getViewer()`, so they follow the deployment default, not the preference.
 
 ### 8.2 Serialisers
 
@@ -577,10 +578,11 @@ Loads outages, resolves identities, fetches scopes, calls `evaluate()`, shapes b
 
 | Route                           | Purpose                                                   |
 | ------------------------------- | --------------------------------------------------------- |
+| `GET /api/sla/pages/overview`, `/alerts`, `/health`, `/partners/[partner]`, `/partners/[partner]/terms` | Page envelopes the mini-app renders (`?window=`, `?view=`); the engineer-only pages 404 for the business view (added 2026-10-16) |
+| `GET /api/sla/contract-terms/[partner]`, `PUT` | Contract terms read and save; the editor is `X-Forwarded-User` |
+| `POST /api/sla/contract-terms/[partner]/review` | Form validation for the mini-app, the one set of rules (added 2026-10-16) |
 | `GET /api/sla/feed`             | Dashboard data                                            |
 | `GET /api/sla/health`           | Unusable rows, unresolved names, missing fields (GTOC-45) |
-| `GET /alerts`                   | Alert history page, technical role only                   |
-| `GET /health`                   | Data health page, technical role only                     |
 | `POST /api/internal/alerts/run` | Alert evaluation, called by Cloud Scheduler and by ingestion |
 | `POST /api/ingest/pir-approved` | Jira Automation webhook; `sla-ingestion` only              |
 | `POST /api/slack/interactions`  | Slack Correct button and modal; `sla-ingestion` only        |
@@ -630,9 +632,7 @@ Structure is defined in `specs/2026-10-07-dashboard-ui-design.md` §4 to §9a: a
 
 ### 9.4 Theming
 
-The visual language lives in `.claude/rules/design.md`. That file is authoritative; where it and this spec disagree, it wins.
-
-The app owns its own theme. Design tokens are defined once as CSS custom properties and consumed through Tailwind config. Components live in `src/ui/` and are built against those tokens.
+Revised 2026-10-16: the UI lives in the `sla-tracking` mini-app and takes its theme from the mini-apps template (`@xsolla/xui-tokens`, `DESIGN.md` there). This repo has no components and no theme.
 
 **No literal colour, spacing or radius value appears in a component.** Every value resolves through a token. This is the rule most likely to erode over a long build, and the one that makes the difference between a screen that looks like the product and one that looks close.
 
@@ -767,7 +767,7 @@ No UI snapshot tests.
 | 1   | Vendor data handling for contract documents sent to an external API                                                 | Slice two implementation | Needs an owner          |
 | 2   | Which Slack channels receive CSM, engineer and Legal alerts. (Ingestion capture messages go to `C0BUT8U637Y`.)      | Alerting                 | Partner Success         |
 | 3   | Who confirms extracted terms — CSM, Legal, or both                                                                  | Slice two                | Partner Success / Legal |
-| 4   | Cloud SQL connection method from Cloud Run (Direct VPC egress or the Cloud SQL connector), and how `sla-dashboard` sits behind corporate SSO. SSO now also decides who can edit contract terms (§6.6) | Deployment, terms editing | Engineering / Infrastructure |
+| 4   | Cloud SQL connection method from Cloud Run (the registry uses the Cloud SQL connector today; Direct VPC egress is the alternative) for both services, since the database is in `gcp-xsolla` and the services in `xsolla-n8n-prod`. The SSO half closed 2026-10-16: the mini-app host's Okta session, with the backend reachable only through its proxy; the editor identity is `X-Forwarded-User` (§6.6) | Deployment | Engineering / Infrastructure |
 
 **Decided 2026-09-28.** Penalty credit never under-reports: a month short of a band's threshold by any amount is in the lower band. Evaluation starts at the later of `effectiveFrom` and 2026-01-01, prorating a mid-month first window. The terms carry no exclusions, because excluded events never become Jira tickets.
 

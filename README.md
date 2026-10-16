@@ -99,6 +99,12 @@ trending to run out around the 14th — so they're flagged **at risk** with the 
 Both views are built from the exact same evaluated numbers, so they never disagree — they just show a
 different level of detail for different people. Access is enforced **server-side**, not by hiding fields in the UI.
 
+The dashboard runs as the **Proactive SLA Tracking** mini-app at
+https://prototype.xsolla.dev/mini-apps/sla-tracking (Okta sign-in through the mini-app host). This repo is its
+backend: route handlers only, deployed to Cloud Run. The React frontend lives in `xsolla/mini-apps` under
+`apps/sla-tracking` and renders the page envelopes `/api/sla/pages/*` return. Design:
+`specs/2026-10-16-mini-app-split-design.md`.
+
 **Business view** (CSM + Legal)
 
 - Status — OK / At risk / Breached — in plain contract language.
@@ -128,11 +134,13 @@ Automatic notifications while there's still time to act:
 Example — Slack to the CSM: *"Partner A trending to miss 99.9% in ~6 days — 10% credit at risk,"* not forty
 repeats of "availability degraded."
 
-## Services and ingestion
+## Services, frontend and ingestion
 
-The app is built once and deployed as two Cloud Run services, selected by `SERVICE_ROLE`: `sla-dashboard`
-(internal, serves the dashboard and the alert-run endpoint) and `sla-ingestion` (public, serves only the Jira
-webhook and Slack interactions). A Jira Automation webhook posts each approved PIR to `sla-ingestion`, which
+The backend is built once and deployed as two Cloud Run services, selected by `SERVICE_ROLE`: `sla-dashboard`
+(reached by the mini-app host's proxy and by the alert job; serves the page endpoints, contract terms and the
+alert-run endpoint) and `sla-ingestion` (public, serves only the Jira webhook and Slack interactions). The
+frontend is the `sla-tracking` mini-app, which calls `sla-dashboard` only through
+`/api/mini-app-proxy/sla-tracking`. A Jira Automation webhook posts each approved PIR to `sla-ingestion`, which
 resolves partners and services through the registry and writes outage rows directly — no separate workflow
 tool in between. Every capture and correction posts to Slack and triggers an alert run on `sla-dashboard`. See
 `specs/2026-09-25-ingestion-in-app-design.md` for the full design and `docs/deploy.md` for running both
