@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "verify-registry": "tsx scripts/verify-registry.ts",
     "backtest": "tsx scripts/backtest.ts",

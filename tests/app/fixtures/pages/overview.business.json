@@ -1,0 +1,290 @@
+{
+  "frame": {
+    "windowKey": "2026-09",
+    "windowTitle": "September 2026",
+    "phase": "open",
+    "phaseLabel": "In progress",
+    "months": [
+      {
+        "key": "2026-09",
+        "title": "September 2026",
+        "phase": "open",
+        "phaseLabel": "In progress",
+        "href": "/?window=2026-09",
+        "selected": true
+      },
+      {
+        "key": "2026-08",
+        "title": "August 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-08",
+        "selected": false
+      },
+      {
+        "key": "2026-07",
+        "title": "July 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-07",
+        "selected": false
+      },
+      {
+        "key": "2026-06",
+        "title": "June 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-06",
+        "selected": false
+      },
+      {
+        "key": "2026-05",
+        "title": "May 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-05",
+        "selected": false
+      },
+      {
+        "key": "2026-04",
+        "title": "April 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-04",
+        "selected": false
+      },
+      {
+        "key": "2026-03",
+        "title": "March 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-03",
+        "selected": false
+      },
+      {
+        "key": "2026-02",
+        "title": "February 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-02",
+        "selected": false
+      },
+      {
+        "key": "2026-01",
+        "title": "January 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-01",
+        "selected": false
+      }
+    ],
+    "asOfLabel": "2026-09-23 15:58:00 UTC",
+    "view": {
+      "active": "business"
+    }
+  },
+  "nav": {
+    "windowKey": "2026-09",
+    "role": "business",
+    "partners": [
+      {
+        "id": "scopely",
+        "name": "Scopely",
+        "href": "/partners/scopely?window=2026-09",
+        "tone": "at_risk"
+      },
+      {
+        "id": "niantic",
+        "name": "Niantic",
+        "href": "/partners/niantic?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "kabam",
+        "name": "Kabam",
+        "href": "/partners/kabam?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "warner-brothers",
+        "name": "Warner Brothers",
+        "href": "/partners/warner-brothers?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "bandai-namco",
+        "name": "Bandai Namco",
+        "href": "/partners/bandai-namco?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "second-dinner",
+        "name": "Second Dinner",
+        "href": "/partners/second-dinner?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "roblox",
+        "name": "Roblox",
+        "href": "/partners/roblox?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "twitch",
+        "name": "Twitch",
+        "href": "/partners/twitch?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "mihoyo",
+        "name": "miHoYo",
+        "href": "/partners/mihoyo?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "nexters",
+        "name": "Nexters",
+        "href": "/partners/nexters?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "netmarble",
+        "name": "Netmarble",
+        "href": "/partners/netmarble?window=2026-09",
+        "tone": "tracking"
+      }
+    ],
+    "alerts": null,
+    "health": null,
+    "active": {
+      "kind": "overview"
+    }
+  },
+  "breadcrumb": [
+    {
+      "label": "Overview"
+    }
+  ],
+  "showWindow": true,
+  "view": {
+    "summary": "Monitoring 1 SLA term across 1 partner · 10 partners tracking only.",
+    "settledNote": null,
+    "failure": null,
+    "tiles": [
+      {
+        "label": "Breached",
+        "value": "0",
+        "detail": null,
+        "tone": "neutral",
+        "labelTone": "danger",
+        "emphasis": false
+      },
+      {
+        "label": "At risk",
+        "value": "1",
+        "detail": null,
+        "help": "At risk triggers before a breach when either:\n\nTrend: at least 20% of the window has elapsed, at least 50% of the downtime allowance is used, and the current pace projects the allowance will be exceeded.\n\nLevel: at least 75% of the allowance is used, regardless of elapsed time or burn rate.\n\nAt 100%, the status becomes Breached.\n\nSlack alerts only on an upward status change and are suppressed during excluded maintenance.",
+        "tone": "warning",
+        "labelTone": "warning",
+        "emphasis": false
+      },
+      {
+        "label": "Meeting",
+        "value": "0",
+        "detail": null,
+        "tone": "neutral",
+        "labelTone": "success",
+        "emphasis": false
+      },
+      {
+        "label": "Tracking only",
+        "value": "10",
+        "detail": "No target, no status",
+        "tone": "muted",
+        "emphasis": false
+      }
+    ],
+    "attention": [
+      {
+        "partnerId": "scopely",
+        "partnerName": "Scopely",
+        "href": "/partners/scopely?window=2026-09",
+        "term": {
+          "key": "scopely:Payments",
+          "title": "Payments",
+          "status": "at_risk",
+          "statusLabel": "At risk",
+          "target": "99.950%",
+          "actual": "99.915%",
+          "actualCaption": "to date",
+          "allowed": "21.6 min",
+          "consumed": "18.4 min",
+          "remaining": "3.2 min",
+          "usedMinutes": 18.4,
+          "allowedMinutes": 21.6,
+          "consumedPercent": "85.2% consumed",
+          "downLine": "18.4 / 21.6 min down",
+          "trend": {
+            "bars": [
+              {
+                "month": "2026-03",
+                "label": "March 2026",
+                "minutes": null,
+                "current": false
+              },
+              {
+                "month": "2026-04",
+                "label": "April 2026",
+                "minutes": 0,
+                "current": false
+              },
+              {
+                "month": "2026-05",
+                "label": "May 2026",
+                "minutes": 12,
+                "current": false
+              },
+              {
+                "month": "2026-06",
+                "label": "June 2026",
+                "minutes": 30,
+                "current": false
+              },
+              {
+                "month": "2026-07",
+                "label": "July 2026",
+                "minutes": 8,
+                "current": false
+              },
+              {
+                "month": "2026-08",
+                "label": "August 2026",
+                "minutes": 20,
+                "current": false
+              },
+              {
+                "month": "2026-09",
+                "label": "September 2026",
+                "minutes": 18.4,
+                "current": true
+              }
+            ],
+            "summary": "March 2026: no data; April 2026: 0.0 min; May 2026: 12.0 min; June 2026: 30.0 min; July 2026: 8.0 min; August 2026: 20.0 min; September 2026: 18.4 min"
+          },
+          "credit": {
+            "incurred": "0%",
+            "projected": "5%",
+            "text": "0% → 5%"
+          },
+          "sentence": "At the current pace, downtime will exhaust the allowance before the window closes.",
+          "nextTier": null,
+          "windowNote": null,
+          "clause": null,
+          "tickets": null,
+          "outages": null,
+          "reconciliation": ""
+        }
+      }
+    ]
+  }
+}

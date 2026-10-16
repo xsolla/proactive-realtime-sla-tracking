@@ -32,7 +32,6 @@ vi.mock("@/data", async (importOriginal) => {
   };
 });
 
-vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined }) }));
 
 vi.mock("next/navigation", () => ({
   notFound: () => {
@@ -71,6 +70,7 @@ function terms(overrides: Partial<ContractScope> = {}) {
   };
 }
 
+/** `updatedBy` travels as the proxy's X-Forwarded-User header, never in the body. */
 function saveBody(
   lifecycle: "terms_pending_review" | "contract_bound",
   expectedVersion: number | null,
@@ -86,10 +86,11 @@ function saveBody(
 }
 
 function put(partner: string, body: unknown): Promise<Response> {
+  const { updatedBy, ...rest } = body as { updatedBy?: string };
   return PUT(new Request(`http://localhost/api/sla/contract-terms/${partner}`, {
     method: "PUT",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
+    headers: { "content-type": "application/json", ...(updatedBy === undefined ? {} : { "x-forwarded-user": updatedBy }) },
+    body: JSON.stringify(rest),
   }), { params: Promise.resolve({ partner }) });
 }
 
@@ -206,7 +207,6 @@ describe("contract terms routes and technical view", () => {
       }),
     );
     expect(inputValue(editing, "target-payments")).toBe("97.25");
-    expect(inputValue(editing, "updated-by")).toBe("");
     expect(editing).not.toMatch(/placeholder=/i);
     expect(editing).not.toContain("99.95");
 
@@ -287,6 +287,29 @@ describe("contract terms routes and technical view", () => {
     expect(rows[0]?.lifecycle).toBe("terms_pending_review");
   });
 
+  it("records the forwarded Okta identity as the editor, lowercased, and refuses a production save without it", async () => {
+    const { db } = await openDb();
+    const created = await put("roblox", saveBody("terms_pending_review", null, "Ada.Lovelace@Xsolla.com"));
+    expect(created.status).toBe(200);
+    const rows = await readContractTerms(db);
+    expect(rows[0]?.updatedBy).toBe("ada.lovelace@xsolla.com");
+
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      const refused = await put("roblox", { expectedVersion: 1, lifecycle: "contract_bound", terms: terms() });
+      expect(refused.status).toBe(401);
+      expect(await refused.json()).toEqual({ kind: "unauthorized" });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    expect((await readContractTerms(db))[0]?.version).toBe(1);
+
+    // Outside production the dev stand-in applies, so the Vite proxy and tests need no header.
+    const dev = await put("roblox", { expectedVersion: 1, lifecycle: "contract_bound", terms: terms() });
+    expect(dev.status).toBe(200);
+    expect((await readContractTerms(db))[0]?.updatedBy).toBe("dev@xsolla.com");
+  });
+
   it("rejects an invalid tier list on the server and writes nothing", async () => {
     const database = await openDb();
     const response = await put(
@@ -338,7 +361,6 @@ describe("contract terms routes and technical view", () => {
     expect(html).not.toContain("EXAMPLE");
     expect(inputValue(html, "effective-from")).toBe("");
     expect(inputValue(html, "target-scope-1")).toBe("");
-    expect(inputValue(html, "updated-by")).toBe("");
   });
 });
 

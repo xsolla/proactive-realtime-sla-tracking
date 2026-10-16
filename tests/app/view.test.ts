@@ -12,6 +12,8 @@ describe("view model", () => {
     const term = scopely?.terms[0];
     expect(term).toMatchObject({
       title: "Payments",
+      status: "breached",
+      statusLabel: "Breached",
       target: "99.950%",
       actual: "99.648%",
       actualCaption: "to date",

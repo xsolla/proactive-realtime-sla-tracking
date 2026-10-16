@@ -23,7 +23,6 @@ function readyForm(expectedVersion: number | null = null): ContractFormState {
         sourceClause: "FIXTURE clause alpha",
       },
     ],
-    updatedBy: "ada",
     expectedVersion,
   };
 }

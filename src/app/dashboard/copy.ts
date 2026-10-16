@@ -35,8 +35,6 @@ export const CLAUSE_NOT_RECORDED = "Clause not recorded";
 
 export const FILED_AGAINST = "Filed against";
 
-export const EXHAUSTION_NONE = "None projected";
-
 export const ADD_CONTRACT_TERMS = "Add contract terms";
 
 export const VIEW_TERMS = "View terms";
@@ -401,22 +399,6 @@ export function summaryLine(terms: number, partners: number, trackingOnly: numbe
     return `${head}.`;
   }
   return `${head} · ${trackingOnly} ${trackingOnly === 1 ? "partner" : "partners"} tracking only.`;
-}
-
-export function railLine(input: {
-  terms: number;
-  /** Null when the outage count is unknown; the segment is then omitted, never printed as zero. */
-  outages: number | null;
-  minutes: number;
-  trackingOnly: boolean;
-  services?: number;
-}): string {
-  const outages = input.outages === null ? [] : [`${input.outages} ${input.outages === 1 ? "outage" : "outages"}`];
-  if (input.trackingOnly) {
-    const services = input.services ?? 0;
-    return [`${services} ${services === 1 ? "service" : "services"}`, ...outages, `${input.minutes.toFixed(1)} min recorded`].join(" · ");
-  }
-  return [`${input.terms} ${input.terms === 1 ? "term" : "terms"}`, ...outages, `${input.minutes.toFixed(1)} min`].join(" · ");
 }
 
 export function alertScopeLabel(scopeId: string, title: (scopeId: string) => string): string {

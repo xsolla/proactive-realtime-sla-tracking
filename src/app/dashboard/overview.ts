@@ -1,13 +1,21 @@
-import { ADD_CONTRACT_TERMS, DRAFT_TERMS, NO_TARGET_NOTE, SETTLED_NOTE, UNAVAILABLE, VIEW_TERMS, railLine, summaryLine } from "./copy";
+import { ADD_CONTRACT_TERMS, DRAFT_TERMS, NO_TARGET_NOTE, SETTLED_NOTE, UNAVAILABLE, VIEW_TERMS, summaryLine } from "./copy";
+import { HIGH_CONSUMPTION, MIN_CONSUMPTION, MIN_ELAPSED } from "@/engine/constants";
 import { withWindow } from "./nav";
 import type { PartnerView, Status, TermView } from "./view";
 
-export type OverviewTile = { label: string; value: string; detail: string | null; tone: "neutral" | "warning" | "danger" | "muted"; labelTone?: "success" | "warning" | "danger"; emphasis: boolean };
+export type OverviewTile = { label: string; value: string; detail: string | null; help?: string; tone: "neutral" | "warning" | "danger" | "muted"; labelTone?: "success" | "warning" | "danger"; emphasis: boolean };
 export type AttentionRow = { partnerId: string; partnerName: string; href: string; term: TermView };
-export type RailCard = { id: string; name: string; href: string; worst: Status | null; line: string; termsLink: { label: string; href: string } | null; unavailable: boolean };
-export type OverviewView = { summary: string; settledNote: string | null; failure: string | null; tiles: OverviewTile[]; attention: AttentionRow[]; rail: RailCard[] };
+export type OverviewView = { summary: string; settledNote: string | null; failure: string | null; tiles: OverviewTile[]; attention: AttentionRow[] };
 
 const RANK: Record<Status, number> = { meeting: 0, at_risk: 1, breached: 2 };
+const percent = (fraction: number) => `${fraction * 100}%`;
+const AT_RISK_HELP = [
+  "At risk triggers before a breach when either:",
+  `Trend: at least ${percent(MIN_ELAPSED)} of the window has elapsed, at least ${percent(MIN_CONSUMPTION)} of the downtime allowance is used, and the current pace projects the allowance will be exceeded.`,
+  `Level: at least ${percent(HIGH_CONSUMPTION)} of the allowance is used, regardless of elapsed time or burn rate.`,
+  "At 100%, the status becomes Breached.",
+  "Slack alerts only on an upward status change and are suppressed during excluded maintenance.",
+].join("\n\n");
 
 export function termsLinkFor(partner: PartnerView): { label: string; href: string } | null {
   const href = `/partners/${partner.id}/terms`;
@@ -17,27 +25,8 @@ export function termsLinkFor(partner: PartnerView): { label: string; href: strin
   return null;
 }
 
-function countedMinutes(partner: PartnerView): number {
-  return partner.terms.reduce((sum, term) => sum + term.usedMinutes, 0) + partner.tracking.reduce((sum, row) => sum + row.usedMinutes, 0);
-}
-
-/** Null when the count is unknown: business terms carry no outage records, so zero would be a false zero. */
-function outageCount(partner: PartnerView): number | null {
-  if (partner.terms.some((term) => term.tickets === null)) return null;
-  const keys = new Set<string>();
-  for (const term of partner.terms) for (const ticket of term.tickets ?? []) keys.add(ticket.key);
-  for (const row of partner.tracking) for (const outage of row.outages ?? []) keys.add(outage.pirKey);
-  if (keys.size > 0) return keys.size;
-  // Business tracking rows carry counts, not keys.
-  return partner.tracking.reduce((sum, row) => sum + row.outageCount, 0);
-}
-
 function consumed(term: TermView): number {
   return term.allowedMinutes > 0 ? term.usedMinutes / term.allowedMinutes : Number.POSITIVE_INFINITY;
-}
-
-function rank(partner: PartnerView): number {
-  return partner.worst === null ? -1 : RANK[partner.worst];
 }
 
 export function buildOverview(input: {
@@ -45,7 +34,6 @@ export function buildOverview(input: {
   phase: "open" | "settled";
   windowKey: string;
   failure: string | null;
-  role: "technical" | "business";
 }): OverviewView {
   const terms = input.partners.flatMap((partner) => partner.terms);
   const scoredPartners = input.partners.filter((partner) => partner.terms.length > 0).length;
@@ -57,13 +45,13 @@ export function buildOverview(input: {
   const tiles: OverviewTile[] = input.failure !== null
     ? [
         { label: "Breached", value: UNAVAILABLE, detail: null, tone: "muted", labelTone: "danger", emphasis: false },
-        { label: "At risk", value: UNAVAILABLE, detail: null, tone: "muted", labelTone: "warning", emphasis: false },
+        { label: "At risk", value: UNAVAILABLE, detail: null, help: AT_RISK_HELP, tone: "muted", labelTone: "warning", emphasis: false },
         { label: "Meeting", value: UNAVAILABLE, detail: null, tone: "muted", labelTone: "success", emphasis: false },
         { label: "Tracking only", value: UNAVAILABLE, detail: null, tone: "muted", emphasis: false },
       ]
     : [
         { label: "Breached", value: String(breaching), detail: null, tone: breaching > 0 ? "danger" : "neutral", labelTone: "danger", emphasis: breaching > 0 },
-        { label: "At risk", value: String(atRisk), detail: null, tone: atRisk > 0 ? "warning" : "neutral", labelTone: "warning", emphasis: false },
+        { label: "At risk", value: String(atRisk), detail: null, help: AT_RISK_HELP, tone: atRisk > 0 ? "warning" : "neutral", labelTone: "warning", emphasis: false },
         { label: "Meeting", value: String(count("meeting")), detail: null, tone: "neutral", labelTone: "success", emphasis: false },
         { label: "Tracking only", value: String(trackingOnly), detail: NO_TARGET_NOTE, tone: "muted", emphasis: false },
       ];
@@ -76,26 +64,11 @@ export function buildOverview(input: {
     )
     .sort((left, right) => RANK[right.term.status] - RANK[left.term.status] || consumed(right.term) - consumed(left.term));
 
-  const rail: RailCard[] = [...input.partners]
-    .sort((left, right) => rank(right) - rank(left) || countedMinutes(right) - countedMinutes(left))
-    .map((partner) => ({
-      id: partner.id,
-      name: partner.name,
-      href: withWindow(`/partners/${partner.id}`, input.windowKey),
-      worst: partner.worst,
-      line: partner.unavailable
-        ? UNAVAILABLE
-        : railLine({ terms: partner.terms.length, outages: outageCount(partner), minutes: countedMinutes(partner), trackingOnly: partner.trackingOnly, services: partner.tracking.length }),
-      termsLink: input.role === "technical" ? termsLinkFor(partner) : null,
-      unavailable: partner.unavailable,
-    }));
-
   return {
     summary: input.failure !== null ? "" : summaryLine(terms.length, scoredPartners, trackingOnly),
     settledNote: input.phase === "settled" ? SETTLED_NOTE : null,
     failure: input.failure,
     tiles,
     attention,
-    rail,
   };
 }

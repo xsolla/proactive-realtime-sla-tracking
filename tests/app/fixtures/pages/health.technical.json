@@ -1,0 +1,216 @@
+{
+  "frame": {
+    "windowKey": "2026-09",
+    "windowTitle": "September 2026",
+    "phase": "open",
+    "phaseLabel": "In progress",
+    "months": [
+      {
+        "key": "2026-09",
+        "title": "September 2026",
+        "phase": "open",
+        "phaseLabel": "In progress",
+        "href": "/?window=2026-09",
+        "selected": true
+      },
+      {
+        "key": "2026-08",
+        "title": "August 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-08",
+        "selected": false
+      },
+      {
+        "key": "2026-07",
+        "title": "July 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-07",
+        "selected": false
+      },
+      {
+        "key": "2026-06",
+        "title": "June 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-06",
+        "selected": false
+      },
+      {
+        "key": "2026-05",
+        "title": "May 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-05",
+        "selected": false
+      },
+      {
+        "key": "2026-04",
+        "title": "April 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-04",
+        "selected": false
+      },
+      {
+        "key": "2026-03",
+        "title": "March 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-03",
+        "selected": false
+      },
+      {
+        "key": "2026-02",
+        "title": "February 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-02",
+        "selected": false
+      },
+      {
+        "key": "2026-01",
+        "title": "January 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-01",
+        "selected": false
+      }
+    ],
+    "asOfLabel": "2026-09-23 15:58:00 UTC",
+    "view": {
+      "active": "technical"
+    }
+  },
+  "nav": {
+    "windowKey": "2026-09",
+    "role": "technical",
+    "partners": [
+      {
+        "id": "scopely",
+        "name": "Scopely",
+        "href": "/partners/scopely?window=2026-09",
+        "tone": "breached"
+      },
+      {
+        "id": "niantic",
+        "name": "Niantic",
+        "href": "/partners/niantic?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "kabam",
+        "name": "Kabam",
+        "href": "/partners/kabam?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "warner-brothers",
+        "name": "Warner Brothers",
+        "href": "/partners/warner-brothers?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "bandai-namco",
+        "name": "Bandai Namco",
+        "href": "/partners/bandai-namco?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "second-dinner",
+        "name": "Second Dinner",
+        "href": "/partners/second-dinner?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "roblox",
+        "name": "Roblox",
+        "href": "/partners/roblox?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "twitch",
+        "name": "Twitch",
+        "href": "/partners/twitch?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "mihoyo",
+        "name": "miHoYo",
+        "href": "/partners/mihoyo?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "nexters",
+        "name": "Nexters",
+        "href": "/partners/nexters?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "netmarble",
+        "name": "Netmarble",
+        "href": "/partners/netmarble?window=2026-09",
+        "tone": "tracking"
+      }
+    ],
+    "alerts": {
+      "count": 1
+    },
+    "health": {
+      "count": 3
+    },
+    "active": {
+      "kind": "health"
+    }
+  },
+  "breadcrumb": [
+    {
+      "label": "Health"
+    }
+  ],
+  "showWindow": false,
+  "view": {
+    "health": {
+      "usableCount": 3,
+      "droppedRows": 1,
+      "unresolvedPartnerNames": [
+        "Unknown Co"
+      ],
+      "unmatchedServiceNames": [],
+      "partnersWithNoRows": [
+        "Niantic"
+      ],
+      "reasons": [
+        {
+          "key": "unresolved_partner",
+          "label": "Unresolved partner name",
+          "count": 1
+        }
+      ],
+      "invalidTerms": [],
+      "ingestion": {
+        "status": "ok",
+        "failed": {
+          "count": 1,
+          "rows": [
+            {
+              "pirKey": "GTO-9",
+              "href": null,
+              "detail": "Jira fetch failed"
+            }
+          ]
+        },
+        "unresolved": {
+          "count": 0,
+          "rows": []
+        },
+        "withoutMessage": {
+          "count": 0,
+          "rows": []
+        }
+      }
+    },
+    "unusable": null
+  }
+}

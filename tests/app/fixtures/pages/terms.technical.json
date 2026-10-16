@@ -1,0 +1,387 @@
+{
+  "frame": {
+    "windowKey": "2026-09",
+    "windowTitle": "September 2026",
+    "phase": "open",
+    "phaseLabel": "In progress",
+    "months": [
+      {
+        "key": "2026-09",
+        "title": "September 2026",
+        "phase": "open",
+        "phaseLabel": "In progress",
+        "href": "/?window=2026-09",
+        "selected": true
+      },
+      {
+        "key": "2026-08",
+        "title": "August 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-08",
+        "selected": false
+      },
+      {
+        "key": "2026-07",
+        "title": "July 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-07",
+        "selected": false
+      },
+      {
+        "key": "2026-06",
+        "title": "June 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-06",
+        "selected": false
+      },
+      {
+        "key": "2026-05",
+        "title": "May 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-05",
+        "selected": false
+      },
+      {
+        "key": "2026-04",
+        "title": "April 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-04",
+        "selected": false
+      },
+      {
+        "key": "2026-03",
+        "title": "March 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-03",
+        "selected": false
+      },
+      {
+        "key": "2026-02",
+        "title": "February 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-02",
+        "selected": false
+      },
+      {
+        "key": "2026-01",
+        "title": "January 2026",
+        "phase": "settled",
+        "phaseLabel": "Settled",
+        "href": "/?window=2026-01",
+        "selected": false
+      }
+    ],
+    "asOfLabel": "2026-09-23 15:58:00 UTC",
+    "view": {
+      "active": "technical"
+    }
+  },
+  "nav": {
+    "windowKey": "2026-09",
+    "role": "technical",
+    "partners": [
+      {
+        "id": "scopely",
+        "name": "Scopely",
+        "href": "/partners/scopely?window=2026-09",
+        "tone": "breached"
+      },
+      {
+        "id": "niantic",
+        "name": "Niantic",
+        "href": "/partners/niantic?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "kabam",
+        "name": "Kabam",
+        "href": "/partners/kabam?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "warner-brothers",
+        "name": "Warner Brothers",
+        "href": "/partners/warner-brothers?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "bandai-namco",
+        "name": "Bandai Namco",
+        "href": "/partners/bandai-namco?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "second-dinner",
+        "name": "Second Dinner",
+        "href": "/partners/second-dinner?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "roblox",
+        "name": "Roblox",
+        "href": "/partners/roblox?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "twitch",
+        "name": "Twitch",
+        "href": "/partners/twitch?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "mihoyo",
+        "name": "miHoYo",
+        "href": "/partners/mihoyo?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "nexters",
+        "name": "Nexters",
+        "href": "/partners/nexters?window=2026-09",
+        "tone": "tracking"
+      },
+      {
+        "id": "netmarble",
+        "name": "Netmarble",
+        "href": "/partners/netmarble?window=2026-09",
+        "tone": "tracking"
+      }
+    ],
+    "alerts": {
+      "count": 1
+    },
+    "health": {
+      "count": 3
+    },
+    "active": {
+      "kind": "partner",
+      "id": "scopely"
+    }
+  },
+  "breadcrumb": [
+    {
+      "label": "Overview",
+      "href": "/?window=2026-09"
+    },
+    {
+      "label": "Scopely",
+      "href": "/partners/scopely?window=2026-09"
+    },
+    {
+      "label": "Contract terms"
+    }
+  ],
+  "showWindow": false,
+  "view": {
+    "partner": "scopely",
+    "partnerName": "Scopely",
+    "row": {
+      "lifecycle": "contract_bound",
+      "version": 3,
+      "updatedBy": "j.patel@xsolla.com",
+      "updatedAt": "2026-09-10T12:00:00.000Z",
+      "updatedAtLabel": "2026-09-10 12:00:00 UTC",
+      "terms": {
+        "partner": "scopely",
+        "lifecycle": "contract_bound",
+        "effectiveFrom": "2026-01-01",
+        "effectiveTo": null,
+        "contractAggregateCap": null,
+        "scopes": [
+          {
+            "kind": "service",
+            "scopeId": "payments",
+            "services": [
+              "payments"
+            ],
+            "target": 99.95,
+            "penalty": {
+              "kind": "tiers",
+              "tiers": [
+                {
+                  "atOrAbove": 99.9,
+                  "credit": 5
+                },
+                {
+                  "atOrAbove": 0,
+                  "credit": 10
+                }
+              ],
+              "perScopeCap": null
+            },
+            "sourceClause": "§4.2"
+          }
+        ]
+      }
+    },
+    "initial": {
+      "effectiveFrom": "2026-01-01",
+      "effectiveTo": "",
+      "contractAggregateCap": "",
+      "scopes": [
+        {
+          "scopeId": "payments",
+          "kind": "service",
+          "services": [
+            "payments"
+          ],
+          "includesScopedServices": "",
+          "target": "99.95",
+          "penaltyKind": "tiers",
+          "tiers": [
+            {
+              "atOrAbove": "99.9",
+              "credit": "5",
+              "fixed": false
+            },
+            {
+              "atOrAbove": "0",
+              "credit": "10",
+              "fixed": true
+            }
+          ],
+          "perScopeCap": "",
+          "sourceClause": "§4.2"
+        }
+      ],
+      "expectedVersion": 3
+    },
+    "services": [
+      {
+        "id": "80lv",
+        "displayName": "80lv"
+      },
+      {
+        "id": "afs",
+        "displayName": "AFS"
+      },
+      {
+        "id": "chat-platform",
+        "displayName": "ChatPlatform"
+      },
+      {
+        "id": "concourse",
+        "displayName": "Concourse"
+      },
+      {
+        "id": "corp-site",
+        "displayName": "CorpSite"
+      },
+      {
+        "id": "funding-club",
+        "displayName": "Funding Club"
+      },
+      {
+        "id": "gamers-platform",
+        "displayName": "GamersPlatform"
+      },
+      {
+        "id": "igs-bb",
+        "displayName": "IGS-BB"
+      },
+      {
+        "id": "infrastructure",
+        "displayName": "Infrastructure"
+      },
+      {
+        "id": "launcher",
+        "displayName": "Launcher"
+      },
+      {
+        "id": "lightstream",
+        "displayName": "Lightstream"
+      },
+      {
+        "id": "live-ops",
+        "displayName": "LiveOps"
+      },
+      {
+        "id": "login",
+        "displayName": "Login"
+      },
+      {
+        "id": "monetization-fronted",
+        "displayName": "Monetization Fronted"
+      },
+      {
+        "id": "monetization-integration",
+        "displayName": "Monetization Integration"
+      },
+      {
+        "id": "payments",
+        "displayName": "Payments"
+      },
+      {
+        "id": "publisher-account",
+        "displayName": "Publisher Account"
+      },
+      {
+        "id": "rainmaker",
+        "displayName": "Rainmaker"
+      },
+      {
+        "id": "sdk",
+        "displayName": "SDK"
+      },
+      {
+        "id": "shop-builder",
+        "displayName": "Shop Builder"
+      },
+      {
+        "id": "slemma",
+        "displayName": "Slemma"
+      },
+      {
+        "id": "subscriptions",
+        "displayName": "Subscriptions"
+      },
+      {
+        "id": "unknown",
+        "displayName": "Unknown"
+      },
+      {
+        "id": "user-engagement",
+        "displayName": "UserEngagement"
+      },
+      {
+        "id": "webshop",
+        "displayName": "Webshop"
+      },
+      {
+        "id": "xsolla-analytics",
+        "displayName": "Xsolla Analytics"
+      },
+      {
+        "id": "xsolla-id",
+        "displayName": "Xsolla ID"
+      },
+      {
+        "id": "xsolla-mall",
+        "displayName": "Xsolla Mall"
+      },
+      {
+        "id": "xsolla-partner-network",
+        "displayName": "Xsolla Partner Network"
+      },
+      {
+        "id": "xsolla-pay",
+        "displayName": "Xsolla Pay"
+      },
+      {
+        "id": "xsolla-rewards",
+        "displayName": "Xsolla Rewards"
+      },
+      {
+        "id": "xsolla-stack",
+        "displayName": "Xsolla Stack"
+      }
+    ]
+  }
+}

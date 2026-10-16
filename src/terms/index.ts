@@ -1,5 +1,6 @@
 export { DbTermsProvider, type InvalidContractTerms, type StoredContractRow } from "./db";
 export { EmptyTermsProvider } from "./empty";
+export { formStateFromTerms } from "./form-state";
 export { loadContractFile, type LoadedContract } from "./load-contract";
 export {
   contractBodyFromForm,

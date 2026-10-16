@@ -1,5 +1,5 @@
-import { emptyScope, type ContractFormScope, type ContractFormState } from "@/terms/review-contract";
-import type { ContractFile, ContractScope } from "@/terms/types";
+import { emptyScope, type ContractFormScope, type ContractFormState } from "./review-contract";
+import type { ContractFile, ContractScope } from "./types";
 
 export function formStateFromTerms(terms: ContractFile, version: number): ContractFormState {
   return {
@@ -7,7 +7,6 @@ export function formStateFromTerms(terms: ContractFile, version: number): Contra
     effectiveTo: terms.effectiveTo ?? "",
     contractAggregateCap: terms.contractAggregateCap === null ? "" : String(terms.contractAggregateCap),
     scopes: terms.scopes.map(scopeFromStored),
-    updatedBy: "",
     expectedVersion: version,
   };
 }

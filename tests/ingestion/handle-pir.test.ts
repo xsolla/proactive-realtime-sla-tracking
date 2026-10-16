@@ -13,7 +13,7 @@ import gto2454 from "../fixtures/jira/GTO-2454.pir.json";
 import gto913 from "../fixtures/jira/GTO-913.pir.json";
 
 const BASE_URL = "https://xsolla.atlassian.net";
-const SLACK_TOKEN = "xoxb-test-token";
+const SLACK_TOKEN = "fake-slack-bot-token";
 const SLACK_CHANNEL = "C0BUT8U637Y";
 const T0 = new Date("2026-09-28T10:00:00.000Z");
 

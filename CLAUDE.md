@@ -6,7 +6,7 @@
 ## Design authority
 - Specs live in `specs/`. Read the relevant one before starting a task.
   Where code and spec disagree, the spec wins; tell me about the conflict.
-- Current work: `2026-09-25-ingestion-in-app-design.md`
+- Current work: `2026-10-16-mini-app-split-design.md` (GTOC-88: mini-app frontend, API-only backend)
 
 ## Invariants
 - Dashboard and alerts call the same evaluate(); never a second implementation

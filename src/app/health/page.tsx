@@ -9,10 +9,10 @@ import { Shell } from "@/app/shell/shell";
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-export default async function HealthRoute({ searchParams }: { searchParams: Promise<{ window?: string | string[] }> }) {
+export default async function HealthRoute({ searchParams }: { searchParams: Promise<{ window?: string | string[]; view?: string | string[] }> }) {
   noStore();
   const params = await searchParams;
-  const workspace = await loadWorkspace({ window: Array.isArray(params.window) ? params.window[0] : params.window, unusable: true });
+  const workspace = await loadWorkspace({ window: Array.isArray(params.window) ? params.window[0] : params.window, view: Array.isArray(params.view) ? params.view[0] : params.view, unusable: true });
   if (workspace.role === "business") {
     notFound();
   }

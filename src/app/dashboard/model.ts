@@ -14,6 +14,7 @@ import {
   formatUtcTimestamp,
   ingestionDetailText,
   monthTitle,
+  phaseLabel,
   reasonEntries,
   reasonLabel,
   ticketHref,
@@ -27,6 +28,8 @@ export type MonthOption = {
   key: string;
   title: string;
   phase: "open" | "settled";
+  /** The phase as the UI prints it. */
+  phaseLabel: string;
   href: string;
   selected: boolean;
 };
@@ -90,6 +93,7 @@ export function buildMonthOptions(asOf: Date, selectedKey: string, basePath = "/
         key,
         title: monthTitle(key),
         phase,
+        phaseLabel: phaseLabel(phase),
         href: withWindow(basePath, key),
         selected: key === selectedKey,
       };

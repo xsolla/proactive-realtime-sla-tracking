@@ -106,26 +106,37 @@ describe("term table expander", () => {
     expect(html).toMatch(/class="[^"]*border-success[^"]*text-success[^"]*">Meeting</);
   });
 
-  it("labels the budget column Consumption meter, with the consumed figure and no max caption", () => {
+  it("labels the budget column SLA Consumed, with the consumed figure and no max caption", () => {
     const html = renderToStaticMarkup(<TermTable partnerName="Scopely" terms={termsFor([boundaryOutage], 30)} />);
-    expect(html).toContain(">Consumption meter<");
+    expect(html).toContain(">Contractual Status<");
+    expect(html).toContain(">SLA Consumed<");
+    expect(html).not.toContain(">Consumption meter<");
     expect(html).not.toContain("Error budget");
     expect(html).toContain("138.9% consumed");
     expect(html).not.toContain("max 100%");
+    expect(html).toMatch(/grid[^"]*text-center[^"]*text-xs[^"]*uppercase/);
+    expect(html).toMatch(/grid[^"]*items-center[^"]*text-center/);
+    expect(html).not.toContain("-translate-x-2");
   });
 
-  it("has no credit column; credit lives on the coverage cards", () => {
+  it("shows incident reference tickets instead of projected exhaustion, with N/A when there is no incident", () => {
     const terms = termsFor([boundaryOutage], 30);
     const html = renderToStaticMarkup(<TermTable partnerName="Scopely" terms={terms} />);
-    expect(html).toContain(">Projected<");
+    expect(html).toContain(">Incident Ticket Reference<");
+    expect(html).toContain(">GTO-543<");
+    expect(html).not.toContain(">Projected<");
+    expect(html).not.toContain("None projected");
     expect(html).not.toContain(">Credit<");
     expect(html).not.toContain(terms[0]?.credit.text ?? "");
+
+    const noIncident = renderToStaticMarkup(<TermTable partnerName="Scopely" terms={termsFor([], 0)} />);
+    expect(noIncident).toContain(">N/A<");
   });
 
   it("renders the PIR key as a link only for an https ticket URL, and the severity without an em dash", () => {
     const linked = termsFor([boundaryOutage], 30)[0]?.outages ?? [];
     expect(linked[0]?.severity).toBe("L1 · Critical");
-    const linkedHtml = renderToStaticMarkup(<OutageLines outages={linked} />);
+    const linkedHtml = renderToStaticMarkup(<OutageLines outages={linked} reconciliation="" />);
     expect(linkedHtml).toContain('href="https://jira.example/browse/GTO-543"');
     expect(linkedHtml).toContain('rel="noopener noreferrer"');
     expect(linkedHtml).toContain("L1 · Critical");
@@ -136,7 +147,7 @@ describe("term table expander", () => {
     expect(linkedHtml).not.toContain("Source");
 
     const plain = termsFor([{ ...boundaryOutage, pirKey: "GTO-100", pirUrl: null, source: "pipeline" }], 30)[0]?.outages ?? [];
-    const plainHtml = renderToStaticMarkup(<OutageLines outages={plain} />);
+    const plainHtml = renderToStaticMarkup(<OutageLines outages={plain} reconciliation="" />);
     expect(plainHtml).toContain("GTO-100");
     expect(plainHtml).toContain("no ticket link");
     expect(plainHtml).not.toContain("<a ");

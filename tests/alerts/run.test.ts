@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 function slackEnv(): void {
-  process.env.SLACK_BOT_TOKEN = "xoxb-test-token";
+  process.env.SLACK_BOT_TOKEN = "fake-slack-bot-token";
   process.env.SLACK_CHANNEL_LEGAL = "legal-id";
   process.env.SLACK_CHANNEL_ENGINEER = "engineer-id";
 }

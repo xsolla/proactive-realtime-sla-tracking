@@ -12,10 +12,10 @@ function single(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function HomePage({ searchParams }: { searchParams: Promise<{ window?: string | string[] }> }) {
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ window?: string | string[]; view?: string | string[] }> }) {
   noStore();
   const params = await searchParams;
-  const workspace = await loadWorkspace({ window: single(params.window), windowPath: "/" });
+  const workspace = await loadWorkspace({ window: single(params.window), view: single(params.view), windowPath: "/" });
   const nav = buildNav({
     windowKey: workspace.frame.windowKey,
     role: workspace.role,
@@ -29,7 +29,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     phase: workspace.frame.phase,
     windowKey: workspace.frame.windowKey,
     failure: workspace.failure,
-    role: workspace.role,
   });
   return (
     <Shell nav={nav} frame={{ ...workspace.frame, view: workspace.view }} breadcrumb={[{ label: "Overview" }]}>

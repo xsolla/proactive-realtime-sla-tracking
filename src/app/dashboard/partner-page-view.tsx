@@ -1,27 +1,21 @@
 import { Button, Chip, StatusBadge, Tile, Tooltip } from "@/ui";
 import { badgeVariant } from "./attention-table";
 import { BacktestPanel } from "./backtest-panel";
-import { CoverageCards } from "./coverage-cards";
-import { NO_DOWNTIME, ROW_UNAVAILABLE, TRACKING_ONLY_LABEL, UNAVAILABLE, statusLabel } from "./copy";
+import { NO_DOWNTIME, TRACKING_ONLY_LABEL } from "./copy";
 import type { BacktestPanel as BacktestPanelModel } from "./model";
 import { OUTAGE_DISCLOSURE_SCRIPT } from "./outage-disclosure";
 import type { PartnerPageView as Model } from "./partner-page";
 import { TermTable } from "./term-table";
 import { TrackingTable } from "./tracking-table";
-import { buildTrend } from "./view";
 
 export function PartnerPageView({ view, backtest }: { view: Model; backtest: BacktestPanelModel | null }) {
-  const unavailableRow = {
-    key: `${view.id}:unavailable`, service: UNAVAILABLE, minutes: UNAVAILABLE, incidents: UNAVAILABLE, usedMinutes: 0, outageCount: 0,
-    comparison: ROW_UNAVAILABLE, trend: buildTrend([], view.windowKey, 0), outages: null, reconciliation: "",
-  };
   return (
     <>
       <header className="flex flex-wrap items-start justify-between gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="font-heading text-2xl font-bold leading-tight md:text-3xl">{view.name}</h1>
-            {view.unavailable ? null : view.worst === null ? <Chip>{TRACKING_ONLY_LABEL}</Chip> : <StatusBadge variant={badgeVariant[view.worst]} label={statusLabel(view.worst)} />}
+            {view.unavailable ? null : view.worst === null || view.worstLabel === null ? <Chip>{TRACKING_ONLY_LABEL}</Chip> : <StatusBadge variant={badgeVariant[view.worst]} label={view.worstLabel} />}
           </div>
           <p className="flex flex-wrap items-center gap-2 font-mono text-sm text-muted-foreground">
             {view.meta.map((item, index) => (
@@ -54,12 +48,6 @@ export function PartnerPageView({ view, backtest }: { view: Model; backtest: Bac
         </section>
       ) : null}
       {backtest === null ? null : <BacktestPanel partnerName={view.name} panel={backtest} />}
-      {view.terms.length > 0 ? (
-        <section aria-labelledby="coverage-heading" className="flex flex-col gap-4">
-          <h2 id="coverage-heading" className="font-heading text-lg font-semibold leading-tight md:text-xl">Coverage terms</h2>
-          <CoverageCards terms={view.terms} />
-        </section>
-      ) : null}
       {view.unavailable || view.tracking.length > 0 || view.terms.length === 0 ? (
         <section aria-labelledby="tracking-heading" className="flex min-w-0 flex-col gap-4">
           <h2 id="tracking-heading" className="font-heading text-lg font-semibold leading-tight md:text-xl">{view.trackingHeading}</h2>
@@ -67,7 +55,7 @@ export function PartnerPageView({ view, backtest }: { view: Model; backtest: Bac
           {!view.unavailable && view.tracking.length === 0 ? (
             <p className="text-sm text-muted-foreground">{NO_DOWNTIME}</p>
           ) : (
-            <TrackingTable partnerName={view.name} rows={view.unavailable ? [unavailableRow] : view.tracking} unavailable={view.unavailable} />
+            <TrackingTable partnerName={view.name} rows={view.unavailableRow === null ? view.tracking : [view.unavailableRow]} unavailable={view.unavailable} />
           )}
         </section>
       ) : null}

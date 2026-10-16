@@ -102,6 +102,8 @@ different level of detail for different people. Access is enforced **server-side
 **Business view** (CSM + Legal)
 
 - Status — OK / At risk / Breached — in plain contract language.
+- The overview's **At risk** tile has a `?` explainer with the live trend and level thresholds, breach boundary,
+  and Slack alert behaviour.
 - What we promised, and how much of the allowed downtime is left.
 - The credit % at stake.
 - Click any figure for a plain-English reason (which outages, what was excluded and why) — no ticket numbers,
