@@ -148,12 +148,14 @@ services:
   2. After responding, the route keeps running inside `after()` to call `chat.update` and trigger
      the alert run. Cloud Run throttles CPU after the response is sent unless CPU is always
      allocated, which would silently stall that follow-up work.
-- **Direct VPC egress, all traffic:** required so it can reach `sla-dashboard` (internal ingress)
-  to POST `/api/internal/alerts/run` after every capture and correction. `vpc_network` and
-  `vpc_subnet` must both be set, and `vpc_egress` must be `all-traffic`: with
-  `private-ranges-only`, calls to the dashboard's `*.run.app` URL leave over the public path and
-  internal ingress rejects them. Outbound calls to Jira and Slack then leave through the
-  project's Cloud NAT.
+- **Database:** the Cloud SQL connector (`cloudsql_instances`), the same as `sla-dashboard`;
+  `INGESTION_DATABASE_URL` comes from the Infra-owned secret
+  `sla_tracking_ingestion_writer_database_url` (allowlisted in
+  `scripts/lib/shared-secret-allowlist.txt` there).
+- **No VPC egress.** `sla-dashboard` is `ingress: all` with IAM invokers since 2026-10-16, so the
+  alert trigger reaches it over its public URL with the runtime account's identity token; Jira
+  and Slack are public too. (Revised 2026-10-19; the earlier internal-ingress setup needed
+  Direct VPC egress.)
 
 ```yaml
 services:
@@ -168,16 +170,16 @@ services:
     ingress: all
     allow_unauthenticated: true
     min_instances: 1
+    max_instances: 3
     no_cpu_throttling: true
-    vpc_network: xsolla-n8n-prod-network
-    vpc_subnet: cloudrun-jobs-egress-us-west2
-    vpc_egress: all-traffic
+    cloudsql_instances:
+      - gcp-xsolla:us-west2:gcp-pgsql-common-prod-01
     env:
       SERVICE_ROLE: ingestion
       SLACK_CHANNEL_INGESTION: C0BUT8U637Y
-      DASHBOARD_INTERNAL_URL: <sla-dashboard-url>
+      DASHBOARD_INTERNAL_URL: https://sla-dashboard-237109063102.us-west2.run.app
     secrets:
-      - neuronet_user_j_patel_sla_ingestion_database_url
+      - sla_tracking_ingestion_writer_database_url
       - neuronet_user_j_patel_sla_jira_base_url
       - neuronet_user_j_patel_sla_jira_email
       - neuronet_user_j_patel_sla_jira_api_token
@@ -186,7 +188,7 @@ services:
       - neuronet_user_j_patel_sla_slack_signing_secret
       - neuronet_user_j_patel_sla_internal_shared_secret
     secrets_env:
-      INGESTION_DATABASE_URL: neuronet_user_j_patel_sla_ingestion_database_url
+      INGESTION_DATABASE_URL: sla_tracking_ingestion_writer_database_url
       JIRA_BASE_URL: neuronet_user_j_patel_sla_jira_base_url
       JIRA_EMAIL: neuronet_user_j_patel_sla_jira_email
       JIRA_API_TOKEN: neuronet_user_j_patel_sla_jira_api_token
@@ -197,10 +199,9 @@ services:
     active: true
 ```
 
-`cloudrun-jobs-egress-us-west2` is the project's dedicated Cloud Run egress subnet; the older
-`xsolla-n8n-prod-us-subnetwork` ran out of addresses (`docs/cloud-run-egress-subnet.md` in that
-repo). `DASHBOARD_INTERNAL_URL` is only known after `sla-dashboard` first deploys, so the first
-PR can ship the dashboard alone, or ship both and follow up with the URL.
+`DASHBOARD_INTERNAL_URL` is `sla-dashboard`'s live URL. The service URL `sla-ingestion` gets is
+`https://sla-ingestion-237109063102.us-west2.run.app` (same project number and region); confirm
+it in the deploy output before pointing Slack and Jira at it.
 
 ## Secrets
 
@@ -401,7 +402,7 @@ the Neuronet deployment path:
 4. Open the PR to `xsolla/neuronet-automations` with `services/sla-dashboard/`, the two `services:`
    entries, and `jobs/sla-alert-run/` with its `jobs:` entry. After review and merge, CI
    deploys all three. Fill in `DASHBOARD_INTERNAL_URL` once `sla-dashboard` has a URL.
-   (`sla-dashboard` and the job are live as of 2026-10-16; `sla-ingestion` is still to be registered.)
+   (`sla-dashboard` and the job are live as of 2026-10-16; `sla-ingestion` registered 2026-10-19.)
 5. Set the Slack app's Interactivity Request URL to `<sla-ingestion-url>/api/slack/interactions`,
    and invite the bot to `C0BUT8U637Y`.
 6. Point the Jira Automation webhook at `/api/ingest/pir-approved` with body
