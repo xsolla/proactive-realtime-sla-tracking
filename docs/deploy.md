@@ -214,6 +214,20 @@ secret names above are proposals; use whatever names onboarding creates.
 
 ## Database
 
+**Connectivity (found 2026-10-19).** `gcp-xsolla:us-west2:gcp-pgsql-common-prod-01` is a Private Service
+Connect-only instance: no public or private IP, `xsolla-n8n-prod` is an allowed consumer project, and
+auto-DNS is off. The Infra-owned connection strings name its private DNS record
+`gcp-pgsql-common-prod-01.us-west2.sql.gcp-xsolla.cloud.goog`, which resolves only inside a VPC that
+holds the PSC endpoint and the DNS record. So both services use **Direct VPC egress**
+(`vpc_network: xsolla-n8n-prod-network`, `vpc_subnet: cloudrun-jobs-egress-us-west2`,
+`vpc_egress: private-ranges-only`) and no `cloudsql_instances`; the Cloud SQL connector does not serve
+PSC-only instances. Infra provides the PSC endpoint and the DNS record in `xsolla-n8n-prod-network`
+(request: `artifacts/gtoc-88/infra-request-psc-endpoint.md`). Without them every read fails with
+`getaddrinfo ENOTFOUND`. The instance enforces TLS (`ENCRYPTED_ONLY`, Google-managed internal CA): the
+connection string must say `sslmode=no-verify`, or `uselibpqcompat=true&sslmode=require`, or carry a
+`sslrootcert`; plain `sslmode=require` is rejected by node-postgres 8.23 against an internal CA.
+
+
 1. **Responsibilities:** Infra/DBA provisions the Cloud SQL instance and database, an **owner**
    login that owns the database (used only for running migrations), and the `sla_tracking_app_user` and
    `sla_tracking_ingestion_writer` logins with no table privileges — the migrations grant those.
