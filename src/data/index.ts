@@ -7,7 +7,7 @@ export {
   type ContractTermsRow,
   type SaveContractTermsResult,
 } from "./contract-terms";
-export { schema, createDatabase, getDatabase, type Database } from "./db";
+export { schema, connectionOptions, createDatabase, getDatabase, type Database } from "./db";
 export { parseMerchantId } from "./merchant-id";
 export {
   loadOutages,
