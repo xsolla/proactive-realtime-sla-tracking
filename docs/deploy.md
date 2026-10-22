@@ -106,12 +106,14 @@ services:
       VIEWER_ROLE: <business|technical|system>
     secrets:
       - sla_tracking_app_user_database_url
+      - neuronet_user_j_patel_sla_database_server_ca
       - neuronet_user_j_patel_sla_internal_shared_secret
       - neuronet_user_j_patel_sla_slack_bot_token
       - neuronet_user_j_patel_sla_slack_channel_legal
       - neuronet_user_j_patel_sla_slack_channel_engineer
     secrets_env:
       DATABASE_URL: sla_tracking_app_user_database_url
+      DATABASE_CA_CERT: neuronet_user_j_patel_sla_database_server_ca
       INTERNAL_SHARED_SECRET: neuronet_user_j_patel_sla_internal_shared_secret
       SLACK_BOT_TOKEN: neuronet_user_j_patel_sla_slack_bot_token
       SLACK_CHANNEL_LEGAL: neuronet_user_j_patel_sla_slack_channel_legal
@@ -180,6 +182,7 @@ services:
       DASHBOARD_INTERNAL_URL: https://sla-dashboard-237109063102.us-west2.run.app
     secrets:
       - sla_tracking_ingestion_writer_database_url
+      - neuronet_user_j_patel_sla_database_server_ca
       - neuronet_user_j_patel_sla_jira_base_url
       - neuronet_user_j_patel_sla_jira_email
       - neuronet_user_j_patel_sla_jira_api_token
@@ -189,6 +192,7 @@ services:
       - neuronet_user_j_patel_sla_internal_shared_secret
     secrets_env:
       INGESTION_DATABASE_URL: sla_tracking_ingestion_writer_database_url
+      DATABASE_CA_CERT: neuronet_user_j_patel_sla_database_server_ca
       JIRA_BASE_URL: neuronet_user_j_patel_sla_jira_base_url
       JIRA_EMAIL: neuronet_user_j_patel_sla_jira_email
       JIRA_API_TOKEN: neuronet_user_j_patel_sla_jira_api_token
@@ -223,9 +227,15 @@ holds the PSC endpoint and the DNS record. So both services use **Direct VPC egr
 `vpc_egress: private-ranges-only`) and no `cloudsql_instances`; the Cloud SQL connector does not serve
 PSC-only instances. Infra provides the PSC endpoint and the DNS record in `xsolla-n8n-prod-network`
 (request: `artifacts/gtoc-88/infra-request-psc-endpoint.md`). Without them every read fails with
-`getaddrinfo ENOTFOUND`. The instance enforces TLS (`ENCRYPTED_ONLY`, Google-managed internal CA): the
-connection string must say `sslmode=no-verify`, or `uselibpqcompat=true&sslmode=require`, or carry a
-`sslrootcert`; plain `sslmode=require` is rejected by node-postgres 8.23 against an internal CA.
+`getaddrinfo ENOTFOUND`. The instance enforces TLS (`ENCRYPTED_ONLY`) with a
+per-instance Google-managed CA, which Node does not trust, so plain `sslmode=require` fails with
+`UNABLE_TO_VERIFY_LEAF_SIGNATURE` (node-postgres 8.23 reads it as verify-full). TLS is a client
+setting, so it lives in the code, not in the Infra-owned connection strings: both services set
+`DATABASE_CA_CERT` to the server CA PEM (from the `neuronet_user_j_patel_sla_database_server_ca` secret), and
+`connectionOptions` in `src/data/db.ts` then verifies against that CA without a hostname check
+(the instance certificate does not name the PSC host) and drops `sslmode` from the URL, because pg
+lets URL parameters override the `ssl` option. When the DBA rotates the server CA, add a new
+version of the secret and redeploy.
 
 
 1. **Responsibilities:** Infra/DBA provisions the Cloud SQL instance and database, an **owner**

@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import { Pool } from "pg";
+import { Pool, type PoolConfig } from "pg";
 import { slaAlertState } from "./schema/alert-state";
 import { slaContractTerms } from "./schema/contract-terms";
 import { slaOutageCorrections } from "./schema/outage-corrections";
@@ -16,13 +16,36 @@ export const schema = {
 };
 
 /**
+ * With DATABASE_CA_CERT set (PEM), TLS is verified against that CA and the
+ * hostname is not checked: the Cloud SQL per-instance CA does not issue the
+ * server certificate for the PSC DNS name, so this is libpq's verify-ca.
+ * sslmode leaves the URL because pg lets URL parameters override `ssl`, and
+ * plain sslmode=require would mean verify-full against the public CAs.
+ * Unset (local dev, tests), the connection string is used as is.
+ */
+export function connectionOptions(
+  connectionString: string,
+  serverCa = process.env.DATABASE_CA_CERT,
+): PoolConfig {
+  const ca = serverCa?.replaceAll("\\n", "\n").trim();
+  if (!ca) {
+    return { connectionString };
+  }
+  const url = new URL(connectionString);
+  for (const name of ["sslmode", "sslrootcert", "uselibpqcompat"]) {
+    url.searchParams.delete(name);
+  }
+  return { connectionString: url.toString(), ssl: { ca, checkServerIdentity: () => undefined } };
+}
+
+/**
  * pg's default idle timeout is 10s, which closes every connection between
  * page loads and makes each one pay connection setup again. Holding them
  * longer needs keepAlive and an error listener: an idle client the server
  * drops emits "error" on the pool, and with no listener that ends the process.
  */
 export function createDatabase(connectionString: string) {
-  const pool = new Pool({ connectionString, max: 10, idleTimeoutMillis: 900_000, keepAlive: true });
+  const pool = new Pool({ ...connectionOptions(connectionString), max: 10, idleTimeoutMillis: 900_000, keepAlive: true });
   pool.on("error", (error) => {
     console.error("[db] idle client", error);
   });
