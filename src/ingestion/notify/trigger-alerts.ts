@@ -106,11 +106,35 @@ async function postAlertRun(
     if (response.ok) {
       return { ok: true };
     }
-    return { ok: false, error: `Dashboard alert run returned HTTP ${response.status}.` };
+    const reported = await reportedErrors(response);
+    return {
+      ok: false,
+      error: `Dashboard alert run returned HTTP ${response.status}.${reported ? ` ${reported}` : ""}`,
+    };
   } catch (error) {
     return { ok: false, error: describeFetchError(error, "Alert run request") };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * The alert route's own report errors (alert scopes and database failures,
+ * never request headers), so the ingestion log says why the run failed.
+ */
+async function reportedErrors(response: Response): Promise<string> {
+  try {
+    const body: unknown = await response.json();
+    const errors = (body as { errors?: unknown } | null)?.errors;
+    if (!Array.isArray(errors)) {
+      return "";
+    }
+    return errors
+      .filter((error): error is string => typeof error === "string")
+      .join(" | ")
+      .slice(0, 1_000);
+  } catch {
+    return "";
   }
 }
 

@@ -113,7 +113,7 @@ describe("triggerAlertRun", () => {
     expect(calls).toHaveLength(1);
   });
 
-  it("returns ok: false with the status when the dashboard returns HTTP 500", async () => {
+  it("returns ok: false with the status and the run's errors when the dashboard returns HTTP 500", async () => {
     const { fetch } = fetchSequence([
       () => textResponse(TOKEN),
       () =>
@@ -134,8 +134,16 @@ describe("triggerAlertRun", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toContain("500");
+      expect(result.error).toBe("Dashboard alert run returned HTTP 500. Could not evaluate: boom");
     }
+  });
+
+  it("keeps only the status when the error body is not a report", async () => {
+    const { fetch } = fetchSequence([() => textResponse(TOKEN), () => new Response("Internal Server Error", { status: 500 })]);
+
+    const result = await triggerAlertRun({ fetch, env: baseEnv() });
+
+    expect(result).toEqual({ ok: false, error: "Dashboard alert run returned HTTP 500." });
   });
 
   it("makes no request when DASHBOARD_INTERNAL_URL is missing", async () => {

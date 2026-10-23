@@ -39,6 +39,9 @@ export async function POST(request: Request) {
 
   const report = await runAlerts({ asOf: new Date(), dryRun: parsed.dryRun });
   const status = report.errors.some((error) => error.startsWith("Could not evaluate")) ? 500 : 200;
+  if (report.errors.length > 0) {
+    console.error(`[sla-alerts] run returned ${status}: ${report.errors.join(" | ")}`);
+  }
   return json(report, status);
 }
 
