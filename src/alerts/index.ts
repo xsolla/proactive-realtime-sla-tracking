@@ -6,6 +6,7 @@ export { postSlackMessage, type SlackPostResult } from "./slack";
 export {
   createMemoryAlertStore,
   createPostgresAlertStore,
+  lockKey,
   type AlertKey,
   type AlertStateStore,
   type MemoryAlertStore,

@@ -121,8 +121,7 @@ export function createPostgresAlertStore(db: Database): AlertStateStore {
   return {
     async exclusive(key, body) {
       return db.transaction(async (tx) => {
-        const lockId = keyId(key);
-        await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockId}, ${0}::bigint))`);
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey(key)}, ${0}::bigint))`);
         const existing = await tx
           .select({ lastStatus: slaAlertState.lastStatus })
           .from(slaAlertState)
@@ -175,6 +174,15 @@ function keyWhere(key: AlertKey) {
     eq(slaAlertState.scopeId, key.scopeId),
     eq(slaAlertState.period, key.period),
   );
+}
+
+/**
+ * The advisory lock's text key. Never keyId(): Postgres text cannot hold a
+ * NUL byte, so a NUL-separated key fails every lock with "invalid byte
+ * sequence". JSON keeps the parts unambiguous with printable characters.
+ */
+export function lockKey(key: AlertKey): string {
+  return JSON.stringify([key.partnerSlug, key.scopeId, key.period]);
 }
 
 function keyId(key: AlertKey): string {
