@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/internal/alerts/run/route";
 
 const originalSecret = process.env.INTERNAL_SHARED_SECRET;
@@ -47,6 +47,8 @@ describe("POST /api/internal/alerts/run", () => {
     process.env.INTERNAL_SHARED_SECRET = "scheduled-run";
     delete process.env.DATABASE_URL;
 
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+
     const accepted = await post("scheduled-run", JSON.stringify({ dryRun: true }));
     const body = (await accepted.json()) as {
       dryRun: boolean;
@@ -61,6 +63,8 @@ describe("POST /api/internal/alerts/run", () => {
     expect(body.scopesEvaluated).toBe(0);
     expect(body.alertsSent).toBe(0);
     expect(body.errors[0]).toMatch(/^Could not evaluate:/);
+    expect(logged).toHaveBeenCalledWith(expect.stringMatching(/^\[sla-alerts\] run returned 500: Could not evaluate:/));
+    logged.mockRestore();
   });
 
   it("rejects a body that is not JSON", async () => {
